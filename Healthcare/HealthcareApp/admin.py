@@ -2,7 +2,12 @@ from django.contrib import admin
 from .models import (Conversation, Diary, Exercise,
                      FoodItem, Meal, Message,
                      MuscleGroup, NutritionGoal,
-                     NutritionPlan, Reminder, WorkoutSession)
+                     NutritionPlan, Reminder, WorkoutSession,User)
+
+class CourseAppAdminSite(admin.AdminSite):
+    site_header = 'Hệ thống kiểm tra sức khỏe'
+admin_site = CourseAppAdminSite(name='myadmin')
+
 # Register your models here.
 
 class BaseAdmin(admin.ModelAdmin):
@@ -13,14 +18,18 @@ class BaseAdmin(admin.ModelAdmin):
 class ExerciseAdmin(BaseAdmin):
     pass
 
-admin.site.register(Conversation)
-admin.site.register(Diary)
-admin.site.register(Exercise, ExerciseAdmin)
-admin.site.register(FoodItem)
-admin.site.register(Meal)
-admin.site.register(Message)
-admin.site.register(MuscleGroup)
-admin.site.register(NutritionGoal)
-admin.site.register(NutritionPlan)
-admin.site.register(Reminder)
-admin.site.register(WorkoutSession)
+class UserAdmin(BaseAdmin):
+    pass
+
+admin_site.register(Conversation)
+admin_site.register(Diary)
+admin_site.register(Exercise, ExerciseAdmin)
+admin_site.register(FoodItem)
+admin_site.register(Meal)
+admin_site.register(Message)
+admin_site.register(MuscleGroup)
+admin_site.register(NutritionGoal)
+admin_site.register(NutritionPlan)
+admin_site.register(Reminder)
+admin_site.register(WorkoutSession)
+admin_site.register(User)
