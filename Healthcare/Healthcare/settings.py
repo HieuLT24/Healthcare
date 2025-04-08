@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -37,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'HealthcareApp.apps.HealthcareappConfig',
+    'rest_framework.authtoken',
+    'oauth2_provider',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +74,22 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'Healthcare.wsgi.application'
+
+
+import cloudinary
+
+cloudinary.config(
+    cloud_name="dsfghzlat",
+    api_key="784677976657694",
+    api_secret="Y573YM27ykBpFzzWs7AIq2RWOtY",  # Click 'View API Keys' above to copy your API secret
+    secure=True
+)
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
+}
 
 
 # Database
@@ -126,3 +147,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CLIENT_ID ='dgabVc3EHjZv7fSGvFowQe8DES8qJMQbnA6srBt9'
+CLIENT_SECRET ='qcQt663foPCA5ediuyIaa9As5ibNYBMvjjCjSYC1G5Wa5xLCYj3qasmBn3nK1V2yFktgLm0LFgK5EFTRTrpvb5Pld2Lmz2qHLY2yiKJvsch6kONS6F6uua7BjseB5hGg'

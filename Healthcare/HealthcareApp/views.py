@@ -1,4 +1,11 @@
 from django.shortcuts import render
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import permission_classes
+
+from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
+    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role
+from HealthcareApp.serializers import UserSerializer, ExerciseSerializer, WorkoutSessionSerializer, DiarySerializer, \
+    ReminderSerializer, MessageSerializer, ConversationSerializer, NutritionGoalSerializer, NutritionPlanSerializer
 
 # Create your views here.
 from django.http import HttpResponse
@@ -6,3 +13,49 @@ from django.http import HttpResponse
 
 def index(request):
     return HttpResponse("Healthcare App")
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.filter(is_active = True)
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.filter(isActive=True).all()
+    serializer_class = ExerciseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class WorkoutSessionViewSet(viewsets.ModelViewSet):
+    queryset = WorkoutSession.objects.filter(isActive=True)
+    serializer_class = WorkoutSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class DiaryViewSet(viewsets.ModelViewSet):
+    queryset = Diary.objects.filter(isActive = True)
+    serializer_class = DiarySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ReminderViewSet(viewsets.ModelViewSet):
+    queryset = Reminder.objects.filter(isActive = True)
+    serializer_class = ReminderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class MessagesViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.filter(isActive = True)
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class ConversationViewSet(viewsets.ModelViewSet):
+    queryset = Conversation.objects.filter(isActive = True)
+    serializer_class = ConversationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class NutritionGoalViewSet(viewsets.ModelViewSet):
+    queryset = NutritionGoal.objects.filter(isActive = True)
+    serializer_class = NutritionGoalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class NutritionPLanViewSet(viewsets.ModelViewSet):
+    queryset = NutritionPlan.objects.filter(isActive = True)
+    serializer_class = NutritionPlanSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
