@@ -3,13 +3,13 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import permission_classes
 
 from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
-    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role
+    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem
 from HealthcareApp.serializers import UserSerializer, ExerciseSerializer, WorkoutSessionSerializer, DiarySerializer, \
-    ReminderSerializer, MessageSerializer, ConversationSerializer, NutritionGoalSerializer, NutritionPlanSerializer
-
-# Create your views here.
+    ReminderSerializer, MessageSerializer, ConversationSerializer, NutritionGoalSerializer, NutritionPlanSerializer, \
+    MealSerializer, FoodItemSerializer
 from django.http import HttpResponse
 
+# Create your views here.
 
 def index(request):
     return HttpResponse("Healthcare App")
@@ -59,3 +59,12 @@ class NutritionPLanViewSet(viewsets.ModelViewSet):
     serializer_class = NutritionPlanSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+class MealViewSet(viewsets.ModelViewSet):
+    queryset = Meal.objects.filter(isActive = True)
+    serializer_class = MealSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class FoodItemViewSet(viewsets.ModelViewSet):
+    queryset = FoodItem.objects.filter(isActive = True)
+    serializer_class = FoodItemSerializer
+    permission_classes = [permissions.IsAuthenticated]

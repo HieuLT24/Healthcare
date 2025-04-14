@@ -32,7 +32,9 @@ class BaseModel(models.Model):
         abstract = True
 
 class User(AbstractUser):
-    avatar = CloudinaryField(null=True, blank=True)
+    avatar = CloudinaryField(null=True, blank=True,
+                             folder='user_avatar',
+                             )
     role = models.CharField(max_length=50, choices=[(role.name, role.value) for role in Role], default=Role.USER.value)
     date_of_birth= models.DateField(null=True)
     height = models.FloatField(null=True, blank=True)

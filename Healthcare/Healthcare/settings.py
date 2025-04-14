@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'oauth2_provider',
     'drf_yasg',
+    'cloudinary',
+    'cloudinary_storage'
 ]
 
 MIDDLEWARE = [
@@ -84,7 +86,7 @@ cloudinary.config(
     api_secret="Y573YM27ykBpFzzWs7AIq2RWOtY",  # Click 'View API Keys' above to copy your API secret
     secure=True
 )
-
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
@@ -147,6 +149,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CLIENT_ID ='dgabVc3EHjZv7fSGvFowQe8DES8qJMQbnA6srBt9'
-CLIENT_SECRET ='qcQt663foPCA5ediuyIaa9As5ibNYBMvjjCjSYC1G5Wa5xLCYj3qasmBn3nK1V2yFktgLm0LFgK5EFTRTrpvb5Pld2Lmz2qHLY2yiKJvsch6kONS6F6uua7BjseB5hGg'
