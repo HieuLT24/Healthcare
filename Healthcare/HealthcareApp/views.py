@@ -20,51 +20,51 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.filter(isActive=True).all()
+    queryset = Exercise.objects.filter(is_active=True).all()
     serializer_class = ExerciseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class WorkoutSessionViewSet(viewsets.ModelViewSet):
-    queryset = WorkoutSession.objects.filter(isActive=True)
+    queryset = WorkoutSession.objects.filter(is_active=True)
     serializer_class = WorkoutSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class DiaryViewSet(viewsets.ModelViewSet):
-    queryset = Diary.objects.filter(isActive = True)
+    queryset = Diary.objects.filter(is_active = True)
     serializer_class = DiarySerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class ReminderViewSet(viewsets.ModelViewSet):
-    queryset = Reminder.objects.filter(isActive = True)
+    queryset = Reminder.objects.filter(is_active = True)
     serializer_class = ReminderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class MessagesViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.filter(isActive = True)
+    queryset = Message.objects.filter(is_active = True)
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.filter(isActive = True)
+    queryset = Conversation.objects.filter(is_active = True)
     serializer_class = ConversationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class NutritionGoalViewSet(viewsets.ModelViewSet):
-    queryset = NutritionGoal.objects.filter(isActive = True)
+    queryset = NutritionGoal.objects.filter(is_active = True)
     serializer_class = NutritionGoalSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class NutritionPLanViewSet(viewsets.ModelViewSet):
-    queryset = NutritionPlan.objects.filter(isActive = True)
+    queryset = NutritionPlan.objects.filter(is_active = True)
     serializer_class = NutritionPlanSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class MealViewSet(viewsets.ModelViewSet):
-    queryset = Meal.objects.filter(isActive = True)
+    queryset = Meal.objects.filter(is_active = True)
     serializer_class = MealSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class FoodItemViewSet(viewsets.ModelViewSet):
-    queryset = FoodItem.objects.filter(isActive = True)
+    queryset = FoodItem.objects.filter(is_active = True)
     serializer_class = FoodItemSerializer
     permission_classes = [permissions.IsAuthenticated]

@@ -27,7 +27,7 @@ class UserSerializer(ModelSerializer):
 class ExerciseSerializer(ModelSerializer):
     class Meta:
         model = Exercise
-        fields = ['id','isActive','name','description',
+        fields = ['id','is_active','name','description',
                   'difficulty_level','equipment',
                   'duration','repetition','sets','calories_burned',
                   'muscle_groups', 'rating']
@@ -36,20 +36,20 @@ class WorkoutSessionSerializer(ModelSerializer):
     exercise = ExerciseSerializer(many=True)
     class Meta:
         model = WorkoutSession
-        fields =['id','schedule','exercise','isActive',
+        fields =['id','schedule','exercise','is_active',
                  'name','goal','total_duration',
                  'bpm','steps','calories_burned']
 
 class DiarySerializer(ModelSerializer):
     class Meta:
         model = Diary
-        fields =['id','isActive','name','content',
+        fields =['id','is_active','name','content',
                  'user','workout_session' ]
 
 class ReminderSerializer(ModelSerializer):
     class Meta:
         model = Reminder
-        fields =['id','isActive','name','description',
+        fields =['id','is_active','name','description',
                  'time','repeat','reminder_type','user']
 
 class ConversationSerializer(ModelSerializer):
@@ -71,13 +71,13 @@ class NutritionGoalSerializer(ModelSerializer):
     class Meta:
         model = NutritionGoal
         fields =['id','name','date','daily_calories',
-                 'daily_protein','daily_carbs','daily_fats','user']
+                 'daily_proteins','daily_carbs','daily_fats','user']
 
 class NutritionPlanSerializer(ModelSerializer):
     class Meta:
         model = NutritionPlan
         fields =['id','name','date','total_calories',
-                 'total_protein','total_carbs','total_fats',
+                 'total_proteins','total_carbs','total_fats',
                  'user','meals']
 
 class MealSerializer(ModelSerializer):
@@ -89,5 +89,5 @@ class FoodItemSerializer(ModelSerializer):
     class Meta:
         model = FoodItem
         fields =['id','name','unit','calories',
-                 'protein','carbs','fats', 'quantity'
+                 'proteins','carbs','fats', 'quantities'
                  ]

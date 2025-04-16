@@ -129,10 +129,10 @@ def run():
         fi = FoodItem.objects.create(
             name=fake.word().capitalize(),
             calories=round(random.uniform(50, 300), 2),
-            protein=round(random.uniform(5, 30), 2),
+            proteins=round(random.uniform(5, 30), 2),
             carbs=round(random.uniform(10, 60), 2),
             fats=round(random.uniform(2, 25), 2),
-            quantity=random.randint(1, 3),
+            quantities=random.randint(1, 3),
             unit=random.choice(["g", "ml", "cup", "piece"])
         )
         food_items.append(fi)
@@ -151,7 +151,7 @@ def run():
             user=random.choice(users),
             date=datetime.now(),
             daily_calories=round(random.uniform(1500, 2500), 2),
-            daily_protein=round(random.uniform(80, 150), 2),
+            daily_proteins=round(random.uniform(80, 150), 2),
             daily_carbs=round(random.uniform(150, 300), 2),
             daily_fats=round(random.uniform(40, 90), 2),
         )
@@ -163,7 +163,7 @@ def run():
             user=random.choice(users),
             date=datetime.now().date(),
             total_calories=round(random.uniform(1500, 2500), 2),
-            total_protein=round(random.uniform(80, 150), 2),
+            total_proteins=round(random.uniform(80, 150), 2),
             total_carbs=round(random.uniform(150, 300), 2),
             total_fats=round(random.uniform(40, 90), 2),
         )
