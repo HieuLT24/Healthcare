@@ -27,7 +27,7 @@ class UserSerializer(ModelSerializer):
 class ExerciseSerializer(ModelSerializer):
     class Meta:
         model = Exercise
-        fields = ['id','isActive','name','description',
+        fields = ['id','is_active','name','description',
                   'difficulty_level','equipment',
                   'duration','repetition','sets','calories_burned',
                   'muscle_groups', 'rating']
@@ -36,20 +36,20 @@ class WorkoutSessionSerializer(ModelSerializer):
     exercise = ExerciseSerializer(many=True)
     class Meta:
         model = WorkoutSession
-        fields =['id','schedule','exercise','isActive',
+        fields =['id','schedule','exercise','is_active',
                  'name','goal','total_duration',
                  'bpm','steps','calories_burned']
 
 class DiarySerializer(ModelSerializer):
     class Meta:
         model = Diary
-        fields =['id','isActive','name','content',
+        fields =['id','is_active','name','content',
                  'user','workout_session' ]
 
 class ReminderSerializer(ModelSerializer):
     class Meta:
         model = Reminder
-        fields =['id','isActive','name','description',
+        fields =['id','is_active','name','description',
                  'time','repeat','reminder_type','user']
 
 class ConversationSerializer(ModelSerializer):

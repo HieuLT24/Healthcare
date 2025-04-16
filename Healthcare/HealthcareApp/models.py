@@ -24,7 +24,7 @@ class ReminderType(models.TextChoices):
     RESTING = 'resting', 'Resting'
 
 class BaseModel(models.Model):
-    isActive = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
@@ -166,7 +166,7 @@ class NutritionGoal(BaseModel):
     )
     date = models.DateTimeField(null=True)
     daily_calories = models.FloatField(default=None)
-    daily_protein = models.FloatField(default=None)
+    daily_proteins = models.FloatField(default=None)
     daily_carbs = models.FloatField(default=None)
     daily_fats = models.FloatField(default=None)
 
@@ -182,7 +182,7 @@ class NutritionPlan(BaseModel):
     )
     date = models.DateField(null=True)
     total_calories = models.FloatField(default=None)
-    total_protein = models.FloatField(default=None)
+    total_proteins = models.FloatField(default=None)
     total_carbs = models.FloatField(default=None)
     total_fats = models.FloatField(default=None)
     meals = models.ManyToManyField(
@@ -205,10 +205,10 @@ class Meal(BaseModel):
 class FoodItem(BaseModel):
     name = models.CharField(max_length=100)
     calories = models.FloatField(default=None)
-    protein = models.FloatField(default=None)
+    proteins = models.FloatField(default=None)
     carbs = models.FloatField(default=None)
     fats = models.FloatField(default=None)
-    quantity = models.IntegerField(default=None)
+    quantities = models.IntegerField(default=None)
     unit = models.CharField(max_length=40)
     def __str__(self):
         return self.name
