@@ -71,13 +71,13 @@ class NutritionGoalSerializer(ModelSerializer):
     class Meta:
         model = NutritionGoal
         fields =['id','name','date','daily_calories',
-                 'daily_protein','daily_carbs','daily_fats','user']
+                 'daily_proteins','daily_carbs','daily_fats','user']
 
 class NutritionPlanSerializer(ModelSerializer):
     class Meta:
         model = NutritionPlan
         fields =['id','name','date','total_calories',
-                 'total_protein','total_carbs','total_fats',
+                 'total_proteins','total_carbs','total_fats',
                  'user','meals']
 
 class MealSerializer(ModelSerializer):
@@ -89,5 +89,5 @@ class FoodItemSerializer(ModelSerializer):
     class Meta:
         model = FoodItem
         fields =['id','name','unit','calories',
-                 'protein','carbs','fats', 'quantity'
+                 'proteins','carbs','fats', 'quantities'
                  ]
