@@ -1,5 +1,3 @@
-from dataclasses import fields
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
@@ -9,8 +7,8 @@ from .models import (Conversation, Diary, Exercise,
                      FoodItem, Meal, Message,
                      MuscleGroup, NutritionGoal,
                      NutritionPlan, Reminder, WorkoutSession, User)
-
-
+from allauth.socialaccount.models import SocialApp
+from django.contrib.sites.models import Site
 class CourseAppAdminSite(admin.AdminSite):
     site_header = 'Hệ thống kiểm tra sức khỏe'
     site_title = 'Trang Quản Trị'
@@ -30,23 +28,30 @@ class ExerciseAdmin(BaseAdmin):
 
 class UserAdmin(BaseUserAdmin):
     add_form = CustomUserCreationForm
+    model = User
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
             'fields': (
-                'username', 'password1', 'password2', 'date_of_birth', 'first_name', 'last_name', 'avatar', 'is_staff',
-                'is_superuser'),
+                'username', 'email', 'password1', 'password2',
+                'date_of_birth', 'first_name', 'last_name', 'avatar',
+                'is_staff', 'is_superuser'
+            ),
         }),
     )
 
     fieldsets = (
-        ('Account Detail', {'fields': ('username', 'email')}),
-        ('', {'fields': ('date_of_birth', 'first_name', 'last_name', 'avatar')}),
-        ('', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Thông tin tài khoản', {'fields': ('username', 'email', 'password')}),
+        ('Thông tin cá nhân', {'fields': ('first_name', 'last_name', 'date_of_birth', 'avatar')}),
+        ('Phân quyền', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Các mốc thời gian', {'fields': ('last_login', 'date_joined')}),
     )
 
-    list_display = ['id', 'username', 'first_name', 'last_name', 'email']
-    list_filter = ['date_joined']
+    list_display = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff')
+    list_filter = ('is_staff', 'is_superuser', 'date_joined')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    ordering = ('-date_joined',)
 
 
 class FoodItemAdmin(BaseAdmin):
@@ -83,7 +88,7 @@ class MealAdmin(BaseAdmin):
         )
 
     fieldsets = (
-        ('Food items', {'fields': ('food_items',)}),
+        ('Food items', {'fields': ('name','food_items',)}),
         ('Total Nutrition', {'fields': ('nutritional_summary',)})
     )
 
@@ -128,7 +133,8 @@ class ReminderAdmin(BaseAdmin):
 class WorkoutSessionAdmin(BaseAdmin):
     pass
 
-
+admin_site.register(SocialApp)
+admin_site.register(Site)
 admin_site.register(Conversation, ConversationAdmin)
 admin_site.register(Diary, DiaryAdmin)
 admin_site.register(Exercise, ExerciseAdmin)
