@@ -1,14 +1,111 @@
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField
 from rest_framework.serializers import ModelSerializer
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
     Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem
+from django.contrib.auth import get_user_model, authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import serializers
+
+
+
+
+User = get_user_model()
+
+class FacebookLoginSerializer(serializers.Serializer):
+    access_token = CharField(required=True, help_text="Facebook access token.")
+
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    access_token = CharField(required=False)
+    id_token = CharField(required=False)
+
+
+
+
+class RegisterSerializer(ModelSerializer):
+    password = CharField(write_only=True, required=True, validators=[validate_password])
+    password2 = CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password2','first_name', 'last_name', 'date_of_birth', 'avatar']
+        ref_name = "CustomRegisterSerializer"
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise ValidationError({"password": "Mật khẩu không khớp."})
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        user = User.objects.create_user(**validated_data)
+        return user
+
+class LoginSerializer(ModelSerializer):
+    username = CharField(write_only=True, required=True)
+    password = CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+        ref_name = "CustomLoginSerializer"
+    def validate(self, attrs):
+        username = attrs.get('username')
+        password = attrs.get('password')
+
+        if username and password:
+            user = authenticate(request=self.context.get('request'),
+                                username=username, password=password)
+
+            if not user:
+                raise ValidationError("Tên đăng nhập hoặc mật khẩu không đúng.", code='authorization')
+
+            if not user.is_active:
+                raise ValidationError("Tài khoản chưa được kích hoạt.", code='authorization')
+        else:
+            raise ValidationError("Vui lòng nhập tên đăng nhập và mật khẩu.", code='authorization')
+
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name
+            }
+        }
+
+class LogoutSerializer(ModelSerializer):
+    refresh = CharField()
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        try:
+            self.token_obj = RefreshToken(self.token)
+        except Exception:
+            raise ValidationError("Refresh token không hợp lệ")
+        return attrs
+
+    def save(self,**kwargs):
+        self.token_obj.blacklist()
+
 
 
 class UserSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['avatar'] = instance.avatar.url if instance.avatar else ''
+        return data
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name',
-                  'email', 'date_of_birth', 'avatar',
-                  'role', 'height', 'weight', 'health_goals']
+        fields = ['username', 'password', 'first_name', 'last_name', 'avatar']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -17,12 +114,11 @@ class UserSerializer(ModelSerializer):
 
     def create(self, validated_data):
         data = validated_data.copy()
-        user = User(**data)
-        user.set_password(data['password'])
-        user.save()
+        u = User(**data)
+        u.set_password(u.password)
+        u.save()
 
-        return user
-
+        return u
 
 class ExerciseSerializer(ModelSerializer):
     class Meta:
