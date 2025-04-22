@@ -83,11 +83,13 @@ LOGIN_REDIRECT_URL = '/'
 
 REST_USE_JWT = True
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 SITE_ID = 2
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -135,10 +137,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
 }
 
 SIMPLE_JWT = {
@@ -201,19 +204,17 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# GOOGLE
 
-# ID 404365163109-epa79qckrgvu93co2fu8q21rq9ei2uns.apps.googleusercontent.com
-# SECRET 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
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "Nhập token dạng: **Bearer &lt;your_access_token&gt;** hoặc **Token &lt;your_token&gt;**",
+        }
 
-# Facebook
-# ID 1089913789843690
-# SECRET c585122716bf8d447c9404096b7f77ec
-
-
-SOCIALACCOUNT_AUTO_SIGNUP = True
-
-ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
-
+    },
+    'USE_SESSION_AUTH': False,  # Tắt/bật đăng nhập bằng username/password
+}
 

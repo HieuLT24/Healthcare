@@ -25,14 +25,15 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Course API",
+        title="Healthcare API",
         default_version='v1',
-        description="APIs for CourseApp",
+        description="APIs for HealthcareApp",
         contact=openapi.Contact(email="dathieu.dh@ou.edu.vn"),
         license=openapi.License(name="Dat and Hieu @2025"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    authentication_classes=[]
 )
 
 urlpatterns = [
@@ -40,9 +41,6 @@ urlpatterns = [
     path('', include('HealthcareApp.urls')),
     path('o/', include('oauth2_provider.urls',
                        namespace='oauth2_provider')),
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$',
-            schema_view.without_ui(cache_timeout=0),
-            name='schema-json'),
     re_path(r'^swagger/$',
             schema_view.with_ui('swagger', cache_timeout=0),
             name = 'schema-swagger-ui'),
