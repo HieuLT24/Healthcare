@@ -39,7 +39,7 @@ urlpatterns = [
     path('admin/', admin_site.urls),
     path('', include('HealthcareApp.urls')),
     path('o/', include('oauth2_provider.urls',
-                       namespace='oauth2_provider')),
+                       namespace='oauth2')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
             schema_view.without_ui(cache_timeout=0),
             name='schema-json'),

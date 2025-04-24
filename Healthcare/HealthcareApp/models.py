@@ -214,5 +214,3 @@ class FoodItem(BaseModel):
         return self.name
 
 
-
-

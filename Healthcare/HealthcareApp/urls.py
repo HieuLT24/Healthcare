@@ -15,9 +15,10 @@ router.register('reminders', views.ReminderViewSet,basename='reminders')
 router.register('messages', views.MessagesViewSet,basename='messages')
 router.register('conversations', views.ConversationViewSet,basename='conversations')
 router.register('nutrition-goals', views.NutritionGoalViewSet,basename='nutrition-goals')
-router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutrition-plans')
+router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutrition-plapyns')
 router.register('meals', views.MealViewSet,basename='meals')
 router.register('food-items', views.FoodItemViewSet,basename='food-items')
+router.register('user-infor', views.UserInforViewSet,basename='user-infor')
 
 
 schema_view = get_schema_view(
