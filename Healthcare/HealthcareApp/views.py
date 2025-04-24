@@ -1,12 +1,17 @@
-from rest_framework import viewsets, permissions, generics, parsers, status, request
+
+
+from rest_framework import (mixins, viewsets,
+                            permissions, generics, parsers,
+                            status, request)
 from dj_rest_auth.registration.views import SocialLoginView
+from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from HealthcareApp import serializers
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -129,6 +134,12 @@ class UserViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
+    @action(methods=['delete'], detail=False, url_path='current_user', permission_classes=[permissions.IsAuthenticated])
+    def delete_current_user(self, request):
+        if request.method.__eq__("DELETE"):
+            u = request.user
+            u.delete()
+            return Response({'detail': 'User deleted'}, status=status.HTTP_200_OK)
 
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.filter(is_active=True).all()
@@ -148,10 +159,44 @@ class DiaryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class ReminderViewSet(viewsets.ModelViewSet):
+class ReminderViewSet(mixins.ListModelMixin,
+                      mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.DestroyModelMixin,
+                      mixins.UpdateModelMixin,
+                      viewsets.GenericViewSet):
+
     queryset = Reminder.objects.filter(is_active=True)
     serializer_class = serializers.ReminderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Reminder.objects.filter(user = self.request.user, is_active=True)
+
+    def perform_update(self, serializer):
+        # Đảm bảo chỉ user sở hữu mới được update
+        instance = self.get_object()
+        if instance.user != self.request.user:
+            raise PermissionDenied("Bạn không có quyền sửa reminder này.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        # Đảm bảo chỉ user sở hữu mới được xóa
+        if instance.user != self.request.user:
+            raise PermissionDenied("Bạn không có quyền xóa reminder này.")
+        instance.delete()
+    #
+    # @action(methods=['get'], detail=True, url_path='my_reminders',
+    #         permission_classes=[permissions.IsAuthenticated])
+    #
+    # def get(self, request, *args, **kwargs):
+    #
+    #     queryset = self.get_queryset()
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+
+
 
 
 class MessagesViewSet(viewsets.ModelViewSet):
