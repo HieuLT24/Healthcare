@@ -9,21 +9,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 
 
-
-
 User = get_user_model()
 
 class FacebookLoginSerializer(serializers.Serializer):
     access_token = CharField(required=True, help_text="Facebook access token.")
 
-
-
 class GoogleLoginSerializer(serializers.Serializer):
     access_token = CharField(required=False)
     id_token = CharField(required=False)
-
-
-
 
 class RegisterSerializer(ModelSerializer):
     password = CharField(write_only=True, required=True, validators=[validate_password])
@@ -81,20 +74,8 @@ class LoginSerializer(ModelSerializer):
             }
         }
 
-class LogoutSerializer(ModelSerializer):
-    refresh = CharField()
-
-    def validate(self, attrs):
-        self.token = attrs['refresh']
-        try:
-            self.token_obj = RefreshToken(self.token)
-        except Exception:
-            raise ValidationError("Refresh token không hợp lệ")
-        return attrs
-
-    def save(self,**kwargs):
-        self.token_obj.blacklist()
-
+class LogoutSerializer(serializers.Serializer):
+    refresh = CharField(required=True, help_text="JWT refresh token")
 
 
 class UserSerializer(ModelSerializer):
@@ -107,6 +88,9 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ['username', 'password', 'first_name', 'last_name', 'avatar']
         extra_kwargs = {
+            'username': {
+                "read_only": True
+            },
             'password': {
                 'write_only': True
             }
