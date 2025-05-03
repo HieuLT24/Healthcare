@@ -36,46 +36,46 @@ class RegisterSerializer(ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-class LoginSerializer(ModelSerializer):
-    username = CharField(write_only=True, required=True)
-    password = CharField(write_only=True, required=True)
+# class LoginSerializer(ModelSerializer):
+#     username = CharField(write_only=True, required=True)
+#     password = CharField(write_only=True, required=True)
+#
+#     class Meta:
+#         model = User
+#         fields = ['username', 'password']
+#         ref_name = "CustomLoginSerializer"
+#     def validate(self, attrs):
+#         username = attrs.get('username')
+#         password = attrs.get('password')
+#
+#         if username and password:
+#             user = authenticate(request=self.context.get('request'),
+#                                 username=username, password=password)
+#
+#             if not user:
+#                 raise ValidationError("Tên đăng nhập hoặc mật khẩu không đúng.", code='authorization')
+#
+#             if not user.is_active:
+#                 raise ValidationError("Tài khoản chưa được kích hoạt.", code='authorization')
+#         else:
+#             raise ValidationError("Vui lòng nhập tên đăng nhập và mật khẩu.", code='authorization')
+#
+#         refresh = RefreshToken.for_user(user)
+#
+#         return {
+#             'refresh': str(refresh),
+#             'access': str(refresh.access_token),
+#             'user': {
+#                 'id': user.id,
+#                 'username': user.username,
+#                 'email': user.email,
+#                 'first_name': user.first_name,
+#                 'last_name': user.last_name
+#             }
+#         }
 
-    class Meta:
-        model = User
-        fields = ['username', 'password']
-        ref_name = "CustomLoginSerializer"
-    def validate(self, attrs):
-        username = attrs.get('username')
-        password = attrs.get('password')
-
-        if username and password:
-            user = authenticate(request=self.context.get('request'),
-                                username=username, password=password)
-
-            if not user:
-                raise ValidationError("Tên đăng nhập hoặc mật khẩu không đúng.", code='authorization')
-
-            if not user.is_active:
-                raise ValidationError("Tài khoản chưa được kích hoạt.", code='authorization')
-        else:
-            raise ValidationError("Vui lòng nhập tên đăng nhập và mật khẩu.", code='authorization')
-
-        refresh = RefreshToken.for_user(user)
-
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name
-            }
-        }
-
-class LogoutSerializer(serializers.Serializer):
-    refresh = CharField(required=True, help_text="JWT refresh token")
+# class LogoutSerializer(serializers.Serializer):
+#     refresh = CharField(required=True, help_text="JWT refresh token")
 
 
 class UserSerializer(ModelSerializer):
@@ -116,7 +116,7 @@ class WorkoutSessionSerializer(ModelSerializer):
     exercise = ExerciseSerializer(many=True)
     class Meta:
         model = WorkoutSession
-        fields =['id','schedule','exercise','is_active',
+        fields =['id','updated_date','schedule','exercise','is_active',
                  'name','goal','total_duration',
                  'bpm','steps','calories_burned']
 

@@ -1,14 +1,15 @@
+from datetime import timedelta
 
-
+from allauth.headless.base.views import APIView
+from django.db.models import Sum
 from rest_framework import (mixins, viewsets,
                             permissions, generics, parsers,
                             status, request)
 from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
-from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from HealthcareApp import serializers
 from rest_framework.decorators import action, permission_classes
@@ -20,6 +21,8 @@ from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder
     NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem
 from django.http import HttpResponse
 
+
+from django.utils.timezone import now
 
 # Create your views here.
 
@@ -56,68 +59,12 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     parser_classes = [parsers.MultiPartParser]
 
-
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @swagger_auto_schema(
-        request_body=serializers.LoginSerializer,
-        responses={200: openapi.Response("Login successful")},
-        operation_summary="Đăng nhập bằng username và password"
-    )
-    def post(self, request):
-        serializer = serializers.LoginSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @swagger_auto_schema(
-        request_body=serializers.LogoutSerializer,
-        operation_description="Logout user (JWT hoặc Token)",
-        responses={200: openapi.Response('Đăng xuất thành công'),
-                   400: openapi.Response('Yêu cầu không hợp lệ')}
-    )
-    def post(self, request):
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        token_type = auth_header.split(' ')[0].lower() if auth_header else ''
-
-        # logout with JWT
-        if token_type == 'bearer':
-            refresh_token = request.data.get('refresh')
-            if not refresh_token:
-                return Response({'detail': "missing refresh token"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            try:
-                token = RefreshToken(refresh_token)
-                token.blacklist()  # đánh dấu token không hợp lệ
-                return Response({'detail': 'Successfully logged out (JWT)'},
-                                status=status.HTTP_200_OK)
-            except TokenError:
-                return Response({'detail': 'Invalid token (required JWT)'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # logout with TokenAuthentication
-        elif token_type == 'token':
-            user = request.user
-            try:
-                user.auth_token.delete()
-            except:
-                pass
-            return Response({'detail': 'Successfully logged out (Token)'}, status=status.HTTP_200_OK)
-            # Không xác định được loại token
-
-        return Response({'detail': 'Invalid or missing token type (required Token)'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
+class UserViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
     parser_classes = [parsers.MultiPartParser]
 
-    @action(methods=['patch'], url_path="current-user",
+    @action(methods=['patch', 'get'], url_path="current-user",
             detail=False, permission_classes=[permissions.IsAuthenticated])
     def get_current_user(self, request):
         if request.method.__eq__("PATCH"):
@@ -134,12 +81,6 @@ class UserViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-    @action(methods=['delete'], detail=False, url_path='current_user', permission_classes=[permissions.IsAuthenticated])
-    def delete_current_user(self, request):
-        if request.method.__eq__("DELETE"):
-            u = request.user
-            u.delete()
-            return Response({'detail': 'User deleted'}, status=status.HTTP_200_OK)
 
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.filter(is_active=True).all()
@@ -185,17 +126,6 @@ class ReminderViewSet(mixins.ListModelMixin,
         if instance.user != self.request.user:
             raise PermissionDenied("Bạn không có quyền xóa reminder này.")
         instance.delete()
-    #
-    # @action(methods=['get'], detail=True, url_path='my_reminders',
-    #         permission_classes=[permissions.IsAuthenticated])
-    #
-    # def get(self, request, *args, **kwargs):
-    #
-    #     queryset = self.get_queryset()
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
-
-
 
 
 
@@ -233,3 +163,45 @@ class FoodItemViewSet(viewsets.ModelViewSet):
     queryset = FoodItem.objects.filter(is_active=True)
     serializer_class = serializers.FoodItemSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class PersonalStatisticView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.WorkoutSession
+    def get(self, request):
+        period = request.query_params.get('period', 'weekly')
+        today = now().date()
+
+        if period == 'weekly':
+            start_date = today - timedelta(days=today.weekday())
+        elif period =='monthly':
+            start_date = today.replace(day=1)
+        else:
+            return Response({'error': 'Invalid period'}, status=400)
+
+        end_date = today
+
+        workout_sessions = WorkoutSession.objects.filter(
+            user = request.user,
+            updated_date__date__range=(start_date,end_date)
+        )
+
+        total_time = workout_sessions.aggregate(Sum('total_duration')) or 0
+        total_time_value = total_time.get('total_duration__sum', 0)
+        total_calories_burned = workout_sessions.aggregate(Sum('calories_burned')) or 0
+        total_calories_value = total_calories_burned.get('calories_burned__sum', 0)
+        total_sessions = workout_sessions.count()
+
+        return Response({
+            'start_date': start_date,
+            'end_date': end_date,
+            'total_calories_burned': total_calories_value,
+            'total_time': total_time_value,
+            'total_sessions': total_sessions
+        })
+
+    # @swagger_auto_schema(
+    #     operation_description="Xem thống kê"
+    # )
+    # def get(self, request, *args, **kwargs):
+    #     return super().get(request, *args, **kwargs)
+
