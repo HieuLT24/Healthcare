@@ -42,6 +42,10 @@ class User(AbstractUser):
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
 
 class WorkoutSession(BaseModel):
+    user = models.ForeignKey(User, related_name= 'workout_sessions',
+                                    on_delete=models.CASCADE,
+                                    null=True
+                             )
     schedule = models.DateTimeField(default=None)
     name = models.CharField(max_length=200, default=None)
     goal = models.CharField(max_length=200,null=True, blank=True)

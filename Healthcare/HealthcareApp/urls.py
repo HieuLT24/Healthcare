@@ -1,7 +1,9 @@
+
+
 from . import views
 from django.urls import path, include
 from rest_framework import routers
-from .views import LoginView,RegisterView, LogoutView, FacebookLoginView, GoogleLoginView
+from .views import RegisterView, FacebookLoginView, GoogleLoginView, PersonalStatisticView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -39,10 +41,8 @@ urlpatterns = [
 
     # Custom API
     path('api/auth/register/', RegisterView.as_view(), name='register'),
-    path('api/auth/login/', LoginView.as_view(), name='login'),
-
+    path('api/my-statistics/', PersonalStatisticView.as_view(), name='statistic'),
     # Social login
     path('api/auth/facebook/', FacebookLoginView.as_view(), name='facebook_login'),
     path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
-    path('api/auth/logout/', LogoutView.as_view(), name='logout')
 ]

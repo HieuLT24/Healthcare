@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-cfu@qe^h618jfp*k&+1)+(p2i6p7*-y&ts%fc)-%7x%a)txbnb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -136,7 +136,7 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -144,11 +144,11 @@ REST_FRAMEWORK = {
     ),
 }
 
-SIMPLE_JWT = {
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "BLACKLIST_AFTER_ROTATION": True,
-    "ROTATE_REFRESH_TOKENS": True,
-}
+# SIMPLE_JWT = {
+#     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+#     "BLACKLIST_AFTER_ROTATION": True,
+#     "ROTATE_REFRESH_TOKENS": True,
+# }
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
