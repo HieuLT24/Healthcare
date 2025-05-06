@@ -40,7 +40,6 @@ class User(AbstractUser):
     height = models.FloatField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
-
 class WorkoutSession(BaseModel):
     user = models.ForeignKey(User, related_name= 'workout_sessions',
                                     on_delete=models.CASCADE,
@@ -216,7 +215,5 @@ class FoodItem(BaseModel):
     unit = models.CharField(max_length=40)
     def __str__(self):
         return self.name
-
-
 
 

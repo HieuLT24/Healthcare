@@ -103,7 +103,10 @@ class UserSerializer(ModelSerializer):
         u.save()
 
         return u
-
+class UserInforSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['date_of_birth','height','weight','health_goals']
 class ExerciseSerializer(ModelSerializer):
     class Meta:
         model = Exercise

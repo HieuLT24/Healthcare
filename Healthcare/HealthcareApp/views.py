@@ -81,6 +81,9 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
+class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = serializers.UserInforSerializer
 
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.filter(is_active=True).all()
