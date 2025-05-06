@@ -5,7 +5,6 @@ const BASE_URL = "http://192.168.1.15:8000"
 export const endpoints = {
     'login': 'o/token/',
     'google-login': 'api/auth/google/',
-    'facebook-login': 'api/auth/facebook/',
     'register': 'api/auth/register/',
     'reminders': 'reminders/',
     'my-statistics': 'api/my-statistics/',

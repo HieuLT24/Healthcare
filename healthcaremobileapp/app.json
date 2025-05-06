@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "dhieuz",
     "name": "healthcaremobileapp",
     "slug": "healthcaremobileapp",
     "scheme": "healthcaremobileapp",
@@ -14,23 +15,27 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.dhieuz.healthcaremobileapp"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.dhieuz.healthcaremobileapp"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "3169f0a1-71c2-4b39-add3-a3764c2e56b5"
+        "projectId": "6180b71d-cff2-4eaf-a9be-191350924b62"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6180b71d-cff2-4eaf-a9be-191350924b62"
     }
   }
 }

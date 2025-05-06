@@ -8,13 +8,11 @@ import { useNavigation } from "@react-navigation/native";
 const Profile = () => {
     const user = useContext(MyUserContext);
     const dispatch = useContext(MyDispatchContext);
-    const nav = useNavigation();
 
     const logout = () => {
         dispatch({
             "type": "logout"
         });
-        // nav.navigate('login');
     }
 
     return (
