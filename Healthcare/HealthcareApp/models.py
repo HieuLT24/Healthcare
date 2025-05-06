@@ -40,7 +40,6 @@ class User(AbstractUser):
     height = models.FloatField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
-
 class WorkoutSession(BaseModel):
     schedule = models.DateTimeField(default=None)
     name = models.CharField(max_length=200, default=None)
