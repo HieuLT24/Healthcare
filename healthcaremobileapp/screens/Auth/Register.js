@@ -37,9 +37,9 @@ const Register = () => {
     const [msg, setMsg] = useState();
     const [loading, setLoading] = useState(false);
     const nav = useNavigation();
-
+    const [secureEntry, setSecureEntry] = useState({})
     const setState = (value, field) => {
-        setUser({...user, [field]: value});
+        setUser({ ...user, [field]: value });
     }
 
     const picker = async () => {
@@ -75,6 +75,11 @@ const Register = () => {
         return true;
     }
 
+    const toggleSecureEntry = (field) => {
+        setSecureEntry(prev => ({ ...prev, [field]: !prev[field] }));
+
+    }
+
     const register = async () => {
         if (validate() === true) {
             try {
@@ -99,9 +104,6 @@ const Register = () => {
                         'Content-Type': 'multipart/form-data'
                     }
                 });
-
-                // if (res.status === 201)
-                //     nav.navigate('login');
             } catch (ex) {
                 console.error(ex);
             } finally {
@@ -114,19 +116,26 @@ const Register = () => {
         <ScrollView style={MyStyles.p}>
             <HelperText type="error" visible={msg}>{msg}</HelperText>
 
-            {info.map(i => <TextInput key={`Register${i.field}`} value={user[i.field]} 
-                                    onChangeText={t => setState(t, i.field)}
-                                    label={i.label} style={MyStyles.m}
-                                    secureTextEntry={i.secureTextEntry}
-                                    right={<TextInput.Icon icon={i.icon} />} />)}
+            {info.map(i => <TextInput key={`Register${i.field}`} value={user[i.field]}
+                onChangeText={t => setState(t, i.field)}
+                label={i.label} style={[MyStyles.m, MyStyles.bg]}
+                secureTextEntry={i.secureTextEntry && secureEntry[i.field] !== false}
+                right={i.secureTextEntry ? (
+                    <TextInput.Icon
+                      icon={secureEntry[i.field] === false ? "eye" : "eye-off"}
+                      onPress={() => toggleSecureEntry(i.field)}
+                    />
+                  ) : (
+                    <TextInput.Icon icon={i.icon} />
+                  )} />)}
 
             <TouchableOpacity style={MyStyles.m} onPress={picker}>
                 <Text>Chọn ảnh đại diện...</Text>
             </TouchableOpacity>
 
-            {user?.avatar && <Image source={{uri: user.avatar.uri}} style={[MyStyles.avatar, MyStyles.m]} />}
-            
-            <Button disabled={loading} loading={loading} onPress={register} mode="contained" style={MyStyles.m}>Đăng ký</Button>
+            {user?.avatar && <Image source={{ uri: user.avatar.uri }} style={[MyStyles.avatar, MyStyles.m]} />}
+
+            <Button disabled={loading} loading={loading} onPress={register} mode="contained" style={[MyStyles.m, MyStyles.bg]} textColor="#065f46">Đăng ký</Button>
         </ScrollView>
     );
 }

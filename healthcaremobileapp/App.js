@@ -4,79 +4,98 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useContext, useReducer } from 'react';
 import { MyDispatchContext, MyUserContext } from './configs/Contexts';
-
 import MyUserReducer from './reducers/MyUserReducers';
-import Login from './components/User/Login';
-import Register from './components/User/Register';
-import Health from './components/User/Health';
-import Profile from './components/User/Profile';
+import React from 'react';
 
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import Login from './screens/Auth/Login';
+import Register from './screens/Auth/Register';
+import Profile from './screens/Profile/Profile';
+import Home from './screens/Home/Home';
+import Reminder from './screens/Reminder/Reminder';
+
+
+const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const AppDrawer = () => (
+  <Drawer.Navigator screenOptions={{ headerShown: true }}>
+    <Drawer.Screen name="Trang chủ" component={HomeTabs} />
+    <Drawer.Screen name="Workout" component={HomeTabs} />
+    <Drawer.Screen name="Reminder" component={Reminder} />
+    <Drawer.Screen name="Nutrition" component={HomeTabs} />
+
+    <Drawer.Screen name="Hồ sơ" component={Profile} />
+  </Drawer.Navigator>
+);
+
 const AuthTabs = () => (
   <Tab.Navigator>
-    <Tab.Screen 
-      name="login" 
-      component={Login} 
-      options={{ 
-        title: "Đăng nhập", 
+    <Tab.Screen
+      name="login"
+      component={Login}
+      options={{
+        title: "Đăng nhập",
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="account" size={size} color={color} />
         )
-      }} 
+      }}
     />
-    <Tab.Screen 
-      name="register" 
-      component={Register} 
-      options={{ 
-        title: "Đăng ký", 
+
+    <Tab.Screen
+      name="register"
+      component={Register}
+      options={{
+        title: "Đăng ký",
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="account-plus" size={size} color={color} />
         )
-      }} 
+      }}
     />
   </Tab.Navigator>
 );
 
-// 🟢 Tab khi đã đăng nhập
 const HomeTabs = () => (
-  <Tab.Navigator>
-    <Tab.Screen 
-      name="health" 
-      component={Health} 
-      options={{ 
-        title: "Sức khỏe", 
+  <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Screen
+      name="Lịch sử tập luyện"
+      component={Home}
+      options={{
         tabBarIcon: ({ color, size }) => (
-          <MaterialCommunityIcons name="heart" size={size} color={color} />
+          <MaterialCommunityIcons name="chart-line" size={size} color={color} />
         )
-      }} 
+      }}
     />
-    <Tab.Screen 
-      name="profile" 
-      component={Profile} 
-      options={{ 
-        title: "Tài khoản", 
+    <Tab.Screen
+      name="Chỉ số cá nhân"
+      component={Profile}
+      options={{
         tabBarIcon: ({ color, size }) => (
-          <MaterialCommunityIcons name="account-circle" size={size} color={color} />
+          <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
         )
-      }} 
+      }}
     />
+
+
   </Tab.Navigator>
 );
 
 const AppNavigator = () => {
   const user = useContext(MyUserContext);
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} >
+    <Drawer.Navigator screenOptions={{ headerShown: false }} >
       {user ? (
-        <Stack.Screen name="HomeStack" component={HomeTabs} />
+        <Drawer.Screen name="AppDrawer" component={AppDrawer} />
       ) : (
-        <Stack.Screen name="AuthStack" component={AuthTabs} />
+        <Drawer.Screen name="AuthStack" component={AuthTabs} />
       )}
-    </Stack.Navigator>
+    </Drawer.Navigator>
   );
 };
+
 
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
