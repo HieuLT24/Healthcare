@@ -21,6 +21,7 @@ router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutritio
 router.register('meals', views.MealViewSet,basename='meals')
 router.register('food-items', views.FoodItemViewSet,basename='food-items')
 router.register('user-infor', views.UserInforViewSet,basename='user-infor')
+router.register('healthstat', views.HealthStatViewSet,basename='heathstat')
 
 
 schema_view = get_schema_view(

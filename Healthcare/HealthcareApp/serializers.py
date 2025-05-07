@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField
 from rest_framework.serializers import ModelSerializer
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
-    Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem
+    Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
@@ -107,6 +107,12 @@ class UserInforSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['date_of_birth','height','weight','health_goals']
+
+class HealthStatSerializer(ModelSerializer):
+    class Meta:
+        model = HealthStat
+        fields ='__all__'
+
 class ExerciseSerializer(ModelSerializer):
     class Meta:
         model = Exercise
@@ -115,19 +121,37 @@ class ExerciseSerializer(ModelSerializer):
                   'duration','repetition','sets','calories_burned',
                   'muscle_groups', 'rating']
 
-class WorkoutSessionSerializer(ModelSerializer):
+    def create(self, validated_data):
+        # Gán người tạo nếu có request context
+        user = self.context['request'].user
+        validated_data['created_by'] = user
+        return super().create(validated_data)
+
+class WorkoutSessionReadSerializer(serializers.ModelSerializer):
     exercise = ExerciseSerializer(many=True)
+
     class Meta:
         model = WorkoutSession
-        fields =['id','updated_date','schedule','exercise','is_active',
-                 'name','goal','total_duration',
-                 'bpm','steps','calories_burned']
+        fields = '__all__'
+
+
+class WorkoutSessionWriteSerializer(serializers.ModelSerializer):
+    exercise = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Exercise.objects.filter(is_active=True)
+    )
+
+    class Meta:
+        model = WorkoutSession
+        exclude = ['user']
+
 
 class DiarySerializer(ModelSerializer):
     class Meta:
         model = Diary
-        fields =['id','is_active','name','content',
-                 'user','workout_session' ]
+        fields =['id','is_active','name','content','workout_session' ]
+        read_only_fields = ['user']
+
 
 class ReminderSerializer(ModelSerializer):
     class Meta:

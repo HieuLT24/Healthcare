@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from allauth.headless.base.views import APIView
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework import (mixins, viewsets,
                             permissions, generics, parsers,
                             status, request)
@@ -18,11 +18,15 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
 from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
-    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem
+    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem, HealthStat
 from django.http import HttpResponse
 
 
 from django.utils.timezone import now
+
+from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
+    ExerciseSerializer
+
 
 # Create your views here.
 
@@ -85,22 +89,56 @@ class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserInforSerializer
 
-class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.filter(is_active=True).all()
-    serializer_class = serializers.ExerciseSerializer
+class HealthStatViewSet(viewsets.ModelViewSet):
+    serializer_class = HealthStatSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return HealthStat.objects.filter(user=self.request.user).order_by('-date')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.filter(is_active=True)
+    serializer_class = ExerciseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        type_filter = self.request.query_params.get('type')
+        if type_filter == 'personal':
+            return Exercise.objects.filter(created_by=user, is_active=True)
+        elif type_filter == 'suggested':
+            return Exercise.objects.filter(created_by__isnull=True, is_active=True)
+        return Exercise.objects.filter(
+            Q(created_by=user) | Q(created_by__isnull=True),
+            is_active=True
+        )
 
 
 class WorkoutSessionViewSet(viewsets.ModelViewSet):
-    queryset = WorkoutSession.objects.filter(is_active=True)
-    serializer_class = serializers.WorkoutSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return WorkoutSession.objects.filter(user=self.request.user, is_active=True)
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return WorkoutSessionWriteSerializer
+        return WorkoutSessionReadSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class DiaryViewSet(viewsets.ModelViewSet):
     queryset = Diary.objects.filter(is_active=True)
     serializer_class = serializers.DiarySerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class ReminderViewSet(mixins.ListModelMixin,
