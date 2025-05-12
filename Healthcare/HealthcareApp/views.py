@@ -21,7 +21,8 @@ from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder
     NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem
 from django.http import HttpResponse
 
-
+from collections import defaultdict
+from django.db.models.functions import TruncDate
 from django.utils.timezone import now
 
 # Create your views here.
@@ -166,15 +167,19 @@ class FoodItemViewSet(viewsets.ModelViewSet):
 
 class PersonalStatisticView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.WorkoutSession
+    serializer_class = serializers.WorkoutSessionSerializer
+
     def get(self, request):
         period = request.query_params.get('period', 'weekly')
         today = now().date()
 
         if period == 'weekly':
             start_date = today - timedelta(days=today.weekday())
+            date_range = [start_date + timedelta(days=i) for i in range(7)]
         elif period =='monthly':
             start_date = today.replace(day=1)
+            last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            date_range = [start_date + timedelta(days=i) for i in range((last_day - start_date).days + 1)]
         else:
             return Response({'error': 'Invalid period'}, status=400)
 
@@ -182,26 +187,30 @@ class PersonalStatisticView(RetrieveAPIView):
 
         workout_sessions = WorkoutSession.objects.filter(
             user = request.user,
-            updated_date__date__range=(start_date,end_date)
+            updated_date__date__range=(start_date,end_date),
         )
+        # Nhóm dữ liệu theo ngày
+        daily_stats = workout_sessions.annotate(date=TruncDate('updated_date')).values('date') \
+            .annotate(
+            calories_burned_sum=Sum('calories_burned'),
+            total_duration_sum=Sum('total_duration')
+        )
+        # Dữ liệu theo ngày
+        calories_per_day = defaultdict(int)
+        time_per_day = defaultdict(int)
 
-        total_time = workout_sessions.aggregate(Sum('total_duration')) or 0
-        total_time_value = total_time.get('total_duration__sum', 0)
-        total_calories_burned = workout_sessions.aggregate(Sum('calories_burned')) or 0
-        total_calories_value = total_calories_burned.get('calories_burned__sum', 0)
-        total_sessions = workout_sessions.count()
+        for entry in daily_stats:
+            date = entry['date']
+            calories_per_day[date] = entry['calories_burned_sum'] or 0
+            time_per_day[date] = entry['total_duration_sum'] or 0
 
+        # Tạo mảng kết quả theo đúng thứ tự ngày
+        calories_array = [calories_per_day[d] for d in date_range]
+        time_array = [time_per_day[d] for d in date_range]
         return Response({
             'start_date': start_date,
             'end_date': end_date,
-            'total_calories_burned': total_calories_value,
-            'total_time': total_time_value,
-            'total_sessions': total_sessions
+            'total_calories_burned': calories_array,
+            'total_time': time_array,
+            'total_sessions': workout_sessions.count()
         })
-
-    # @swagger_auto_schema(
-    #     operation_description="Xem thống kê"
-    # )
-    # def get(self, request, *args, **kwargs):
-    #     return super().get(request, *args, **kwargs)
-

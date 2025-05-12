@@ -21,11 +21,13 @@ class GoogleLoginSerializer(serializers.Serializer):
 class RegisterSerializer(ModelSerializer):
     password = CharField(write_only=True, required=True, validators=[validate_password])
     password2 = CharField(write_only=True, required=True)
+    avatar = serializers.ImageField(required=False, allow_null=True, allow_empty_file=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2','first_name', 'last_name', 'date_of_birth', 'avatar']
+        fields = ['username', 'password', 'password2','first_name', 'last_name', 'avatar']
         ref_name = "CustomRegisterSerializer"
+
     def validate(self, data):
         if data['password'] != data['password2']:
             raise ValidationError({"password": "Mật khẩu không khớp."})
