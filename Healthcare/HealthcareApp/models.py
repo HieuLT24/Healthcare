@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from ckeditor.fields import RichTextField
@@ -41,6 +42,31 @@ class User(AbstractUser):
     weight = models.FloatField(null=True, blank=True)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
 
+
+class HealthStat(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='health_stats')
+
+    date = models.DateField(auto_now_add=True)
+
+    weight = models.FloatField(null=True, blank=True)  # kg
+    height = models.FloatField(null=True, blank=True)  # m
+    bmi = models.FloatField(null=True, blank=True)
+
+    water_intake = models.FloatField(default=0)  # lít
+    step_count = models.IntegerField(default=0)
+    heart_rate = models.IntegerField(null=True, blank=True)  # bpm
+
+    def save(self, *args, **kwargs):
+        if self.height and self.weight:
+            try:
+                self.bmi = self.weight / (self.height ** 2)
+            except ZeroDivisionError:
+                self.bmi = None
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
 class WorkoutSession(BaseModel):
     user = models.ForeignKey(User, related_name= 'workout_sessions',
                                     on_delete=models.CASCADE,
@@ -70,6 +96,14 @@ class Exercise(BaseModel):
     sets = models.IntegerField(null=True, blank=True)
     calories_burned = models.FloatField(default=None)
     rating = models.FloatField(default=None)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_exercises'
+    )
 
     def __str__(self):
         return self.name
@@ -216,7 +250,5 @@ class FoodItem(BaseModel):
     unit = models.CharField(max_length=40)
     def __str__(self):
         return self.name
-
-
 
 
