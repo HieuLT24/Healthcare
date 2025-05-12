@@ -96,23 +96,27 @@ const Home = () => {
             );
         }
 
+        // Filter out future dates
+        dateRange = dateRange.filter(date => date.isSameOrBefore(today, 'day'));
+
         const labels = dateRange.map((d, i) => {
             if (period === 'weekly') {
                 return d.format('ddd');
             } else {
                 return (i % 5 === 0) ? d.format('DD') : '';
             }
-        }
-        );
-        const total_sessions = statistic?.total_sessions || 0
+        });
 
+        const total_sessions = statistic?.total_sessions || 0;
+
+        // Filter the data arrays to match the filtered date range
         const total_calories_burned = Array.isArray(statistic?.total_calories_burned)
-            ? statistic.total_calories_burned
-            : new Array(labels.length).fill(0);
+            ? statistic.total_calories_burned.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(0);
 
         const total_time = Array.isArray(statistic?.total_time)
-            ? statistic.total_time
-            : new Array(labels.length).fill(0);
+            ? statistic.total_time.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(0);
 
         return { labels, total_sessions, total_calories_burned, total_time };
     }
