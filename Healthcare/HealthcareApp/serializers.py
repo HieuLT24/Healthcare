@@ -108,7 +108,7 @@ class UserSerializer(ModelSerializer):
 class UserInforSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['date_of_birth','height','weight','health_goals']
+        fields = '__all__'
 
 class HealthStatSerializer(ModelSerializer):
     class Meta:

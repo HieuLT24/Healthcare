@@ -3,22 +3,21 @@ import { useEffect, useState } from "react"
 import MyStyles from "../../styles/MyStyles"
 import { ActivityIndicator, ScrollView, View, Text } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { Button, Card, useTheme } from "react-native-paper"
+import { Button, Card, useTheme, Menu, Divider } from "react-native-paper"
 
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import moment from 'moment';
-
-
-
 
 const Home = () => {
     const [statistic, setStatistic] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [period, setPeriod] = useState('weekly')
+    const [selectedDate, setSelectedDate] = useState(moment())
+    const [menuVisible, setMenuVisible] = useState(false)
 
-    const loadStatistic = async (period) => {
+    const loadStatistic = async (period, date) => {
         try {
             setLoading(true);
             setError(null);
@@ -29,6 +28,13 @@ const Home = () => {
                 return;
             }
             let url = `${endpoints['my-statistics']}?period=${period}`
+            if (period === 'weekly') {
+                url += `&week=${date.format('YYYY-[W]WW')}`
+            } else if (period === 'monthly') {
+                url += `&month=${date.format('YYYY-MM')}`
+            } else if (period === 'yearly') {
+                url += `&year=${date.format('YYYY')}`
+            }
             let res = await authApi(token).get(url)
             setStatistic(res.data)
         } catch (err) {
@@ -39,11 +45,64 @@ const Home = () => {
         }
     }
 
-    // Load lại dữ liệu khi period thay đổi
+    // Load lại dữ liệu khi period hoặc selectedDate thay đổi
     useEffect(() => {
-        loadStatistic(period)
-    }, [period])
+        loadStatistic(period, selectedDate)
+    }, [period, selectedDate])
 
+    const getDateOptions = () => {
+        const today = moment();
+        const options = [];
+
+        if (period === 'weekly') {
+            // Tạo danh sách 4 tuần gần nhất
+            for (let i = 0; i < 4; i++) {
+                const weekDate = today.clone().subtract(i, 'weeks');
+                const weekStart = weekDate.clone().startOf('isoWeek');
+                const weekEnd = weekDate.clone().endOf('isoWeek');
+                options.push({
+                    label: `Tuần ${weekDate.format('WW')} (${weekStart.format('DD/MM')} - ${weekEnd.format('DD/MM')})`,
+                    value: weekDate
+                });
+            }
+        } else if (period === 'monthly') {
+            // Tạo danh sách các tháng từ đầu năm đến tháng hiện tại
+            const currentYear = today.year();
+            const currentMonth = today.month(); // 0-11
+            
+            for (let i = 0; i <= currentMonth; i++) {
+                const monthDate = moment().year(currentYear).month(i).date(1);
+                options.push({
+                    label: monthDate.format('MMMM YYYY'),
+                    value: monthDate
+                });
+            }
+        } else if (period === 'yearly') {
+            // Tạo danh sách nhiều năm (từ 2020 đến năm hiện tại)
+            const currentYear = today.year();
+            for (let year = 2020; year <= currentYear; year++) {
+                const yearDate = moment().year(year).startOf('year');
+                options.push({
+                    label: yearDate.format('YYYY'),
+                    value: yearDate
+                });
+            }
+        }
+
+        return options;
+    };
+
+    const getCurrentDateLabel = () => {
+        if (period === 'weekly') {
+            const weekStart = selectedDate.clone().startOf('isoWeek');
+            const weekEnd = selectedDate.clone().endOf('isoWeek');
+            return `Tuần ${selectedDate.format('WW')} (${weekStart.format('DD/MM')} - ${weekEnd.format('DD/MM')})`;
+        } else if (period === 'monthly') {
+            return selectedDate.format('MMMM YYYY');
+        } else {
+            return selectedDate.format('YYYY');
+        }
+    };
 
     if (loading) {
         return (
@@ -80,28 +139,44 @@ const Home = () => {
     };
 
     const showStatisticData = (statistic, period = 'weekly') => {
-        const today = moment();
+        const date = selectedDate.clone();
         let dateRange;
-        const startOfMonth = today.clone().startOf('month');
-        const endOfMonth = today.clone().endOf('month');
-        const daysInMonth = endOfMonth.date();
-
+        
         if (period === 'weekly') {
-            const monday = today.clone().startOf('isoWeek');
+            // Đảm bảo hiển thị đủ 7 ngày trong tuần
+            const monday = date.clone().startOf('isoWeek');
             dateRange = Array.from({ length: 7 }).map((_, i) =>
                 monday.clone().add(i, 'days'))
+        } else if (period === 'yearly') {
+            const startOfYear = date.clone().startOf('year');
+            dateRange = Array.from({ length: 12 }).map((_, i) =>
+                startOfYear.clone().add(i, 'months')
+            );
+            // Chỉ lọc tính đến tháng hiện tại nếu đang xem năm hiện tại
+            if (date.year() === moment().year()) {
+                dateRange = dateRange.filter(d => d.isSameOrBefore(moment(), 'month'));
+            }
         } else {
+            // Tháng: Lấy tất cả các ngày trong tháng
+            const startOfMonth = date.clone().startOf('month');
+            const endOfMonth = date.clone().endOf('month');
+            const daysInMonth = endOfMonth.date();
+            
             dateRange = Array.from({ length: daysInMonth }).map((_, i) =>
                 startOfMonth.clone().add(i, 'days')
             );
+            
+            // Chỉ lọc tính đến ngày hiện tại nếu đang xem tháng hiện tại
+            if (date.isSame(moment(), 'month')) {
+                dateRange = dateRange.filter(d => d.isSameOrBefore(moment(), 'day'));
+            }
         }
-
-        // Filter out future dates
-        dateRange = dateRange.filter(date => date.isSameOrBefore(today, 'day'));
 
         const labels = dateRange.map((d, i) => {
             if (period === 'weekly') {
                 return d.format('ddd');
+            } else if (period === 'yearly') {
+                return d.format('MMM');
             } else {
                 return (i % 5 === 0) ? d.format('DD') : '';
             }
@@ -109,7 +184,7 @@ const Home = () => {
 
         const total_sessions = statistic?.total_sessions || 0;
 
-        // Filter the data arrays to match the filtered date range
+        // lọc dữ liệu 
         const total_calories_burned = Array.isArray(statistic?.total_calories_burned)
             ? statistic.total_calories_burned.slice(0, dateRange.length)
             : new Array(dateRange.length).fill(0);
@@ -125,12 +200,14 @@ const Home = () => {
     console.log("showStatistic data: ", showStatisticData(statistic, period))
 
     return (
-
-        <ScrollView >
+        <ScrollView>
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 16 }}>
                 <Button
                     mode={period === 'weekly' ? 'contained' : 'outlined'}
-                    onPress={() => setPeriod('weekly')}
+                    onPress={() => {
+                        setPeriod('weekly');
+                        setSelectedDate(moment());
+                    }}
                     style={{ marginHorizontal: 8 }}
                     buttonColor="#a7f3d0"
                     textColor="#065f46"
@@ -139,14 +216,58 @@ const Home = () => {
                 </Button>
                 <Button
                     mode={period === 'monthly' ? 'contained' : 'outlined'}
-                    onPress={() => setPeriod('monthly')}
+                    onPress={() => {
+                        setPeriod('monthly');
+                        setSelectedDate(moment().startOf('month'));
+                    }}
                     style={{ marginHorizontal: 8 }}
                     buttonColor="#a7f3d0"
                     textColor="#065f46"
                 >
                     Tháng
                 </Button>
+                <Button
+                    mode={period === 'yearly' ? 'contained' : 'outlined'}
+                    onPress={() => {
+                        setPeriod('yearly');
+                        setSelectedDate(moment().startOf('year'));
+                    }}
+                    style={{ marginHorizontal: 8 }}
+                    buttonColor="#a7f3d0"
+                    textColor="#065f46"
+                >
+                    Năm
+                </Button>
             </View>
+
+            <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
+                <Menu
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                    anchor={
+                        <Button
+                            mode="outlined"
+                            onPress={() => setMenuVisible(true)}
+                            style={{ borderColor: '#065f46' }}
+                            textColor="#065f46"
+                        >
+                            {getCurrentDateLabel()}
+                        </Button>
+                    }
+                >
+                    {getDateOptions().map((option, index) => (
+                        <Menu.Item
+                            key={index}
+                            onPress={() => {
+                                setSelectedDate(option.value);
+                                setMenuVisible(false);
+                            }}
+                            title={option.label}
+                        />
+                    ))}
+                </Menu>
+            </View>
+
             <View style={{ marginVertical: 16 }}>
                 <Text style={[MyStyles.label, { marginLeft: 12 }]}>Số buổi đã tập luyện</Text>
                 <Text style={[MyStyles.label, { marginLeft: 12 }, { fontSize: 30 }]}> {total_sessions}</Text>

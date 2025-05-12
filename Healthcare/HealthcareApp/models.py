@@ -38,20 +38,15 @@ class User(AbstractUser):
                              )
     role = models.CharField(max_length=50, choices=[(role.name, role.value) for role in Role], default=Role.USER.value)
     date_of_birth= models.DateField(null=True)
-    height = models.FloatField(null=True, blank=True)
-    weight = models.FloatField(null=True, blank=True)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
 
 
 class HealthStat(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='health_stats')
-
     date = models.DateField(auto_now_add=True)
-
     weight = models.FloatField(null=True, blank=True)  # kg
     height = models.FloatField(null=True, blank=True)  # m
     bmi = models.FloatField(null=True, blank=True)
-
     water_intake = models.FloatField(default=0)  # lít
     step_count = models.IntegerField(default=0)
     heart_rate = models.IntegerField(null=True, blank=True)  # bpm

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from allauth.headless.base.views import APIView
 from django.db.models import Sum, Q
@@ -22,7 +22,8 @@ from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder
 from django.http import HttpResponse
 
 from collections import defaultdict
-from django.db.models.functions import TruncDate
+import calendar
+from django.db.models.functions import TruncDate, TruncMonth
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
@@ -118,7 +119,7 @@ class ExerciseViewSet(viewsets.ModelViewSet):
         )
 
 
-class WorkoutSessionViewSet(viewsets.ModelViewSet):
+class WorkoutSessionReadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -208,46 +209,135 @@ class FoodItemViewSet(viewsets.ModelViewSet):
 
 class PersonalStatisticView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.WorkoutSessionSerializer
+    serializer_class = serializers.WorkoutSessionReadSerializer
 
     def get(self, request):
         period = request.query_params.get('period', 'weekly')
         today = now().date()
-
+        
         if period == 'weekly':
-            start_date = today - timedelta(days=today.weekday())
+            week_param = request.query_params.get('week')
+            
+            if week_param:
+                try:
+                    # Format should be YYYY-Wnn
+                    year_str, week_str = week_param.split('-W')
+                    year = int(year_str)
+                    week = int(week_str)
+                    
+                    # Tính ngày đầu tiên của tuần (thứ 2)
+                    first_day = datetime(year, 1, 1).date()
+                    
+                    # Ngày đầu tiên của tuần đầu tiên của năm (ngày thứ 2 đầu tiên)
+                    if first_day.weekday() > 0:  # Không phải thứ 2
+                        first_day = first_day - timedelta(days=first_day.weekday())
+                        first_day = first_day + timedelta(days=7)  # Đến thứ 2 tuần sau
+                    
+                    # Tính ngày đầu tiên của tuần được chọn
+                    start_date = first_day + timedelta(weeks=week-1)
+                    end_date = start_date + timedelta(days=6)  # 7 ngày từ ngày bắt đầu
+                    
+                except (ValueError, TypeError):
+                    return Response({'error': 'Invalid week format. Use YYYY-Wnn'}, status=400)
+            else:
+                # Default to current week if no week specified
+                start_date = today - timedelta(days=today.weekday())
+                end_date = start_date + timedelta(days=6)
+                
             date_range = [start_date + timedelta(days=i) for i in range(7)]
-        elif period =='monthly':
-            start_date = today.replace(day=1)
-            last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-            date_range = [start_date + timedelta(days=i) for i in range((last_day - start_date).days + 1)]
+            
+        elif period == 'monthly':
+            month_param = request.query_params.get('month')
+            
+            if month_param:
+                try:
+                    
+                    year, month = map(int, month_param.split('-'))
+                    start_date = datetime(year, month, 1).date()
+                    
+                    _, last_day = calendar.monthrange(year, month)
+                    end_date = datetime(year, month, last_day).date()
+                except (ValueError, TypeError):
+                    return Response({'error': 'Invalid month format. Use YYYY-MM'}, status=400)
+            else:
+                
+                start_date = today.replace(day=1)
+                _, last_day = calendar.monthrange(today.year, today.month)
+                end_date = today.replace(day=last_day)
+                
+            date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+            
+        elif period == 'yearly':
+            year_param = request.query_params.get('year')
+            
+            if year_param:
+                try:
+                    year = int(year_param)
+                    start_date = datetime(year, 1, 1).date()
+                    end_date = datetime(year, 12, 31).date()
+                except (ValueError, TypeError):
+                    return Response({'error': 'Invalid year format. Use YYYY'}, status=400)
+            else:
+                
+                start_date = datetime(today.year, 1, 1).date()
+                end_date = datetime(today.year, 12, 31).date()
+                
+            # For yearly, we'll return monthly statistics
+            date_range = []
+            for month in range(1, 13):
+                date_range.append(datetime(year, month, 1).date())
         else:
-            return Response({'error': 'Invalid period'}, status=400)
-
-        end_date = today
+            return Response({'error': 'Invalid period. Use weekly, monthly, or yearly'}, status=400)
 
         workout_sessions = WorkoutSession.objects.filter(
-            user = request.user,
-            updated_date__date__range=(start_date,end_date),
+            user=request.user,
+            updated_date__date__range=(start_date, end_date),
         )
-        # Nhóm dữ liệu theo ngày
-        daily_stats = workout_sessions.annotate(date=TruncDate('updated_date')).values('date') \
-            .annotate(
-            calories_burned_sum=Sum('calories_burned'),
-            total_duration_sum=Sum('total_duration')
-        )
-        # Dữ liệu theo ngày
-        calories_per_day = defaultdict(int)
-        time_per_day = defaultdict(int)
-
-        for entry in daily_stats:
-            date = entry['date']
-            calories_per_day[date] = entry['calories_burned_sum'] or 0
-            time_per_day[date] = entry['total_duration_sum'] or 0
-
-        # Tạo mảng kết quả theo đúng thứ tự ngày
-        calories_array = [calories_per_day[d] for d in date_range]
-        time_array = [time_per_day[d] for d in date_range]
+        
+        # Dữ liệu thống kê
+        if period == 'yearly':
+            # Nhóm dữ liệu theo tháng
+            monthly_stats = workout_sessions.annotate(
+                month=TruncMonth('updated_date')
+            ).values('month').annotate(
+                calories_burned_sum=Sum('calories_burned'),
+                total_duration_sum=Sum('total_duration')
+            )
+            
+            # Dữ liệu theo tháng
+            calories_per_month = defaultdict(int)
+            time_per_month = defaultdict(int)
+            
+            for entry in monthly_stats:
+                month = entry['month'].date().replace(day=1)
+                calories_per_month[month] = entry['calories_burned_sum'] or 0
+                time_per_month[month] = entry['total_duration_sum'] or 0
+                
+            # Tạo mảng kết quả theo đúng thứ tự tháng
+            calories_array = [calories_per_month[d] for d in date_range]
+            time_array = [time_per_month[d] for d in date_range]
+        else:
+            # Nhóm dữ liệu theo ngày
+            daily_stats = workout_sessions.annotate(
+                date=TruncDate('updated_date')
+            ).values('date').annotate(
+                calories_burned_sum=Sum('calories_burned'),
+                total_duration_sum=Sum('total_duration')
+            )
+            
+            # Dữ liệu theo ngày
+            calories_per_day = defaultdict(int)
+            time_per_day = defaultdict(int)
+            
+            for entry in daily_stats:
+                date = entry['date']
+                calories_per_day[date] = entry['calories_burned_sum'] or 0
+                time_per_day[date] = entry['total_duration_sum'] or 0
+                
+            # Tạo mảng kết quả theo đúng thứ tự ngày
+            calories_array = [calories_per_day[d] for d in date_range]
+            time_array = [time_per_day[d] for d in date_range]
+            
         return Response({
             'start_date': start_date,
             'end_date': end_date,
