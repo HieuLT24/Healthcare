@@ -1,9 +1,9 @@
 import axios from "axios"
 
 
-const BASE_URL = "http://192.168.100.179:8000"
+export const BASE_URL = "http://192.168.100.179:8000"
 
-const endpoints = {
+export const endpoints = {
     'login': 'o/token/',
     'google-login': 'api/auth/google/',
     'register': 'api/auth/register/',
@@ -12,7 +12,7 @@ const endpoints = {
     'current-user': `users/current-user/`,
 }
 
-const authApi = (token) => {
+export const authApi = (token) => {
     return axios.create({
         baseURL: BASE_URL,
         headers: {
