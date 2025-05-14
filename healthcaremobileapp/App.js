@@ -18,9 +18,6 @@ import Reminder from './screens/Reminder/Reminder';
 import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
 
-
-
-
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -35,7 +32,6 @@ const AppDrawer = () => (
     <Drawer.Screen name="Hồ sơ" component={Profile} />
   </Drawer.Navigator>
 );
-
 
 const AuthTabs = () => (
   <Tab.Navigator>
@@ -90,17 +86,14 @@ const HomeTabs = () => (
 
 const AppNavigator = () => {
   const user = useContext(MyUserContext);
-
   return (
-    <NavigationContainer>
-      <Drawer.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <Drawer.Screen name="AppDrawer" component={AppDrawer} />
-        ) : (
-          <Drawer.Screen name="AuthStack" component={AuthTabs} />
-        )}
-      </Drawer.Navigator>
-    </NavigationContainer>
+    <Drawer.Navigator screenOptions={{ headerShown: false }} >
+      {user ? (
+        <Drawer.Screen name="AppDrawer" component={AppDrawer} />
+      ) : (
+        <Drawer.Screen name="AuthStack" component={AuthTabs} />
+      )}
+    </Drawer.Navigator>
   );
 };
 
@@ -121,7 +114,6 @@ const App = () => {
       </MyUserContext.Provider>
     </PaperProvider>
   );
-};
-
+}
 
 export default App;
