@@ -29,13 +29,13 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sites',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'corsheaders',
     'django.contrib.staticfiles',
 
     # APP
@@ -101,7 +101,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'allauth.account.middleware.AccountMiddleware'
 ]
 
@@ -141,8 +140,6 @@ CORS_ALLOW_HEADERS = [
 ]
 
 ROOT_URLCONF = 'Healthcare.urls'
-
-CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {

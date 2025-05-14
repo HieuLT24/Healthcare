@@ -5,8 +5,6 @@ import MyStyles from "../../styles/MyStyles";
 import { Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 
-
-
 const Profile = () => {
     const user = useContext(MyUserContext);
     const dispatch = useContext(MyDispatchContext);
@@ -20,8 +18,7 @@ const Profile = () => {
     return (
         <View>
             <Text style={MyStyles.subject}>Chào {user.username}!</Text>
-            <Button
-        title="Nhập thông tin cá nhân"/>
+
             <Button onPress={logout} mode="contained" style={MyStyles.m}>Đăng xuất</Button>
         </View>
     )
