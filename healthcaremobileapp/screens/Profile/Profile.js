@@ -21,18 +21,10 @@ const Profile = () => {
         <View>
             <Text style={MyStyles.subject}>Chào {user.username}!</Text>
             <Button
-        title="Nhập thông tin cá nhân"
-        onPress={() => navigation.navigate('Cập nhật hồ sơ')}/>
+        title="Nhập thông tin cá nhân"/>
             <Button onPress={logout} mode="contained" style={MyStyles.m}>Đăng xuất</Button>
         </View>
     )
 }
-
-const navigation = useNavigation();
-
-<Button
-  title="Chỉnh sửa hồ sơ"
-  onPress={() => navigation.navigate("EditProfile")}
-/>
 
 export default Profile;
