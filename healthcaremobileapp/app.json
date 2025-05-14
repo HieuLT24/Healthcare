@@ -21,7 +21,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.healthcaremobileapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,9 +32,7 @@
         "projectId": "6180b71d-cff2-4eaf-a9be-191350924b62"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+
     "updates": {
       "url": "https://u.expo.dev/6180b71d-cff2-4eaf-a9be-191350924b62"
     }

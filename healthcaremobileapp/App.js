@@ -17,6 +17,9 @@ import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
 
 
+
+
+
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,6 +34,7 @@ const AppDrawer = () => (
     <Drawer.Screen name="Hồ sơ" component={Profile} />
   </Drawer.Navigator>
 );
+
 
 const AuthTabs = () => (
   <Tab.Navigator>
@@ -85,14 +89,17 @@ const HomeTabs = () => (
 
 const AppNavigator = () => {
   const user = useContext(MyUserContext);
+
   return (
-    <Drawer.Navigator screenOptions={{ headerShown: false }} >
-      {user ? (
-        <Drawer.Screen name="AppDrawer" component={AppDrawer} />
-      ) : (
-        <Drawer.Screen name="AuthStack" component={AuthTabs} />
-      )}
-    </Drawer.Navigator>
+    <NavigationContainer>
+      <Drawer.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          <Drawer.Screen name="AppDrawer" component={AppDrawer} />
+        ) : (
+          <Drawer.Screen name="AuthStack" component={AuthTabs} />
+        )}
+      </Drawer.Navigator>
+    </NavigationContainer>
   );
 };
 
@@ -103,13 +110,11 @@ const App = () => {
   return (
     <MyUserContext.Provider value={user}>
       <MyDispatchContext.Provider value={dispatch}>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
+        <AppNavigator />
       </MyDispatchContext.Provider>
     </MyUserContext.Provider>
-
   );
-}
+};
+
 
 export default App;

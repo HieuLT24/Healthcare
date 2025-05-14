@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from allauth.headless.base.views import APIView
+from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q
 from rest_framework import (mixins, viewsets,
                             permissions, generics, parsers,
@@ -25,7 +26,7 @@ from django.http import HttpResponse
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
-    ExerciseSerializer
+    ExerciseSerializer, UserInforSerializer
 
 
 # Create your views here.
@@ -85,9 +86,17 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
-    queryset = User.objects.filter(is_active=True)
-    serializer_class = serializers.UserInforSerializer
+User = get_user_model()
+
+class UserInforViewSet(viewsets.ModelViewSet):
+    serializer_class = UserInforSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+
+    def get_object(self):
+        return self.request.user
 
 class HealthStatViewSet(viewsets.ModelViewSet):
     serializer_class = HealthStatSerializer
