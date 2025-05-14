@@ -18,6 +18,7 @@ const Profile = () => {
     return (
         <View>
             <Text style={MyStyles.subject}>Chào {user.username}!</Text>
+
             <Button onPress={logout} mode="contained" style={MyStyles.m}>Đăng xuất</Button>
         </View>
     )

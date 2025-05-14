@@ -15,6 +15,7 @@ import Register from './screens/Auth/Register';
 import Profile from './screens/Profile/Profile';
 import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
+
 import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
 
@@ -117,3 +118,4 @@ const App = () => {
 }
 
 export default App;
+
