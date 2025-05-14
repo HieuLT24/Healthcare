@@ -109,7 +109,7 @@ const Login = () => {
     //             useProxy: true,
     //             native: 'com.yourapp://redirect', // Replace with your app's redirect URI
     //         });
-            
+
 
     //         console.log("Redirect URI:", redirect_uri);
 
@@ -132,7 +132,7 @@ const Login = () => {
     //                     Linking.removeEventListener('url', handleUrl);
 
     //                     try {
-                            
+
     //                         let u = await authApi(token).post(endpoints['google-login']);
     //                         console.info(u.data);
     //                         dispatch({
@@ -143,7 +143,7 @@ const Login = () => {
     //                         console.error("Error in API request:", apiError);
     //                     }
     //                 }
-                    
+
     //             }
     //         };
 
@@ -167,23 +167,23 @@ const Login = () => {
             {info.map(i => <TextInput key={`Login${i.field}`} value={user[i.field]}
                 onChangeText={t => setState(t, i.field)}
                 label={i.label}
-                 style={[MyStyles.m, MyStyles.bg]}
+                style={[MyStyles.m, MyStyles.bg]}
                 secureTextEntry={i.secureTextEntry}
                 right={i.secureTextEntry ? (
                     <TextInput.Icon
-                      icon={secureEntry[i.field] === false ? "eye" : "eye-off"}
-                      onPress={() => toggleSecureEntry(i.field)}
+                        icon={secureEntry[i.field] === false ? "eye" : "eye-off"}
+                        onPress={() => toggleSecureEntry(i.field)}
                     />
-                  ) : (
+                ) : (
                     <TextInput.Icon icon={i.icon} />
-                  )} />)}
+                )} />)}
 
             <Button disabled={loading} loading={loading} onPress={login} mode="contained" buttonColor="#a7f3d0"
-    textColor="#065f46">Đăng nhập</Button>
+                textColor="#065f46">Đăng nhập</Button>
             <Text style={{ textAlign: 'center', margin: 20 }}>Hoặc đăng nhập bằng</Text>
 
             <Button icon="google" mode="outlined" onPress={null} style={{ marginBottom: 20 }} buttonColor="#a7f3d0"
-    textColor="#065f46">
+                textColor="#065f46">
                 Google
             </Button>
 

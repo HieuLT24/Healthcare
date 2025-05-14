@@ -1,5 +1,3 @@
-
-
 from . import views
 from django.urls import path, include
 from rest_framework import routers
@@ -11,7 +9,7 @@ from drf_yasg.views import get_schema_view
 router = routers.DefaultRouter()
 router.register('users', views.UserViewSet,basename='users')
 router.register('exercises', views.ExerciseViewSet,basename='exercises')
-router.register('workout-sessions', views.WorkoutSessionViewSet,basename='workout-sessions')
+router.register('workout-sessions', views.WorkoutSessionReadViewSet,basename='workout-sessions')
 router.register('diaries', views.DiaryViewSet,basename='diaries')
 router.register('reminders', views.ReminderViewSet,basename='reminders')
 router.register('messages', views.MessagesViewSet,basename='messages')

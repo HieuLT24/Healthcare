@@ -15,7 +15,8 @@ import Register from './screens/Auth/Register';
 import Profile from './screens/Profile/Profile';
 import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
-
+import RefreshableScreen from './components/RefreshableScreen';
+import { PaperProvider } from 'react-native-paper';
 
 
 
@@ -108,11 +109,17 @@ const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
 
   return (
-    <MyUserContext.Provider value={user}>
-      <MyDispatchContext.Provider value={dispatch}>
-        <AppNavigator />
-      </MyDispatchContext.Provider>
-    </MyUserContext.Provider>
+    <PaperProvider>
+      <MyUserContext.Provider value={user}>
+        <MyDispatchContext.Provider value={dispatch}>
+          <RefreshableScreen>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </RefreshableScreen>
+        </MyDispatchContext.Provider>
+      </MyUserContext.Provider>
+    </PaperProvider>
   );
 };
 

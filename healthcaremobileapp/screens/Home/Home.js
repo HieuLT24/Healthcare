@@ -3,22 +3,21 @@ import { useEffect, useState } from "react"
 import MyStyles from "../../styles/MyStyles"
 import { ActivityIndicator, ScrollView, View, Text } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { Button, Card, useTheme } from "react-native-paper"
+import { Button, Card, useTheme, Menu, Divider } from "react-native-paper"
 
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import moment from 'moment';
-
-
-
 
 const Home = () => {
     const [statistic, setStatistic] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [period, setPeriod] = useState('weekly')
+    const [selectedDate, setSelectedDate] = useState(moment())
+    const [menuVisible, setMenuVisible] = useState(false)
 
-    const loadStatistic = async (period) => {
+    const loadStatistic = async (period, date) => {
         try {
             setLoading(true);
             setError(null);
@@ -29,6 +28,13 @@ const Home = () => {
                 return;
             }
             let url = `${endpoints['my-statistics']}?period=${period}`
+            if (period === 'weekly') {
+                url += `&week=${date.format('YYYY-[W]WW')}`
+            } else if (period === 'monthly') {
+                url += `&month=${date.format('YYYY-MM')}`
+            } else if (period === 'yearly') {
+                url += `&year=${date.format('YYYY')}`
+            }
             let res = await authApi(token).get(url)
             setStatistic(res.data)
         } catch (err) {
@@ -39,11 +45,64 @@ const Home = () => {
         }
     }
 
-    // Load lại dữ liệu khi period thay đổi
+    // Load lại dữ liệu khi period hoặc selectedDate thay đổi
     useEffect(() => {
-        loadStatistic(period)
-    }, [period])
+        loadStatistic(period, selectedDate)
+    }, [period, selectedDate])
 
+    const getDateOptions = () => {
+        const today = moment();
+        const options = [];
+
+        if (period === 'weekly') {
+            // Tạo danh sách 4 tuần gần nhất
+            for (let i = 0; i < 4; i++) {
+                const weekDate = today.clone().subtract(i, 'weeks');
+                const weekStart = weekDate.clone().startOf('isoWeek');
+                const weekEnd = weekDate.clone().endOf('isoWeek');
+                options.push({
+                    label: `Tuần ${weekDate.format('WW')} (${weekStart.format('DD/MM')} - ${weekEnd.format('DD/MM')})`,
+                    value: weekDate
+                });
+            }
+        } else if (period === 'monthly') {
+            // Tạo danh sách các tháng từ đầu năm đến tháng hiện tại
+            const currentYear = today.year();
+            const currentMonth = today.month(); // 0-11
+            
+            for (let i = 0; i <= currentMonth; i++) {
+                const monthDate = moment().year(currentYear).month(i).date(1);
+                options.push({
+                    label: monthDate.format('MMMM YYYY'),
+                    value: monthDate
+                });
+            }
+        } else if (period === 'yearly') {
+            // Tạo danh sách nhiều năm (từ 2020 đến năm hiện tại)
+            const currentYear = today.year();
+            for (let year = 2020; year <= currentYear; year++) {
+                const yearDate = moment().year(year).startOf('year');
+                options.push({
+                    label: yearDate.format('YYYY'),
+                    value: yearDate
+                });
+            }
+        }
+
+        return options;
+    };
+
+    const getCurrentDateLabel = () => {
+        if (period === 'weekly') {
+            const weekStart = selectedDate.clone().startOf('isoWeek');
+            const weekEnd = selectedDate.clone().endOf('isoWeek');
+            return `Tuần ${selectedDate.format('WW')} (${weekStart.format('DD/MM')} - ${weekEnd.format('DD/MM')})`;
+        } else if (period === 'monthly') {
+            return selectedDate.format('MMMM YYYY');
+        } else {
+            return selectedDate.format('YYYY');
+        }
+    };
 
     if (loading) {
         return (
@@ -79,54 +138,143 @@ const Home = () => {
         }
     };
 
-    const showStatisticData = (statistic, period = 'weekly') => {
-        const today = moment();
-        let dateRange;
-        const startOfMonth = today.clone().startOf('month');
-        const endOfMonth = today.clone().endOf('month');
-        const daysInMonth = endOfMonth.date();
+    const healthChartConfig = {
+        backgroundGradientFrom: "#f0fdf4",
+        backgroundGradientTo: "#f0fdf4",
+        decimalPlaces: 1,
+        color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+        style: {
+            borderRadius: 16
+        },
+        propsForDots: {
+            r: "5",
+            strokeWidth: "2",
+            stroke: "#3b82f6"
+        }
+    };
 
+    const showStatisticData = (statistic, period = 'weekly') => {
+        const date = selectedDate.clone();
+        let dateRange;
+        
         if (period === 'weekly') {
-            const monday = today.clone().startOf('isoWeek');
+            // Đảm bảo hiển thị đủ 7 ngày trong tuần
+            const monday = date.clone().startOf('isoWeek');
             dateRange = Array.from({ length: 7 }).map((_, i) =>
                 monday.clone().add(i, 'days'))
+        } else if (period === 'yearly') {
+            const startOfYear = date.clone().startOf('year');
+            dateRange = Array.from({ length: 12 }).map((_, i) =>
+                startOfYear.clone().add(i, 'months')
+            );
+            // Chỉ lọc tính đến tháng hiện tại nếu đang xem năm hiện tại
+            if (date.year() === moment().year()) {
+                dateRange = dateRange.filter(d => d.isSameOrBefore(moment(), 'month'));
+            }
         } else {
+            // Tháng: Lấy tất cả các ngày trong tháng
+            const startOfMonth = date.clone().startOf('month');
+            const endOfMonth = date.clone().endOf('month');
+            const daysInMonth = endOfMonth.date();
+            
             dateRange = Array.from({ length: daysInMonth }).map((_, i) =>
                 startOfMonth.clone().add(i, 'days')
             );
+            
+            // Chỉ lọc tính đến ngày hiện tại nếu đang xem tháng hiện tại
+            if (date.isSame(moment(), 'month')) {
+                dateRange = dateRange.filter(d => d.isSameOrBefore(moment(), 'day'));
+            }
         }
 
         const labels = dateRange.map((d, i) => {
             if (period === 'weekly') {
                 return d.format('ddd');
+            } else if (period === 'yearly') {
+                return d.format('MMM');
             } else {
                 return (i % 5 === 0) ? d.format('DD') : '';
             }
-        }
-        );
-        const total_sessions = statistic?.total_sessions || 0
+        });
 
+        const total_sessions = statistic?.total_sessions || 0;
+
+        // lọc dữ liệu 
         const total_calories_burned = Array.isArray(statistic?.total_calories_burned)
-            ? statistic.total_calories_burned
-            : new Array(labels.length).fill(0);
+            ? statistic.total_calories_burned.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(0);
 
         const total_time = Array.isArray(statistic?.total_time)
-            ? statistic.total_time
-            : new Array(labels.length).fill(0);
+            ? statistic.total_time.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(0);
 
-        return { labels, total_sessions, total_calories_burned, total_time };
+        // Lấy dữ liệu sức khỏe
+        const weight_data = Array.isArray(statistic?.weight_data)
+            ? statistic.weight_data.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(null);
+
+        const bmi_data = Array.isArray(statistic?.bmi_data)
+            ? statistic.bmi_data.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(null);
+
+        const water_intake_data = Array.isArray(statistic?.water_intake_data)
+            ? statistic.water_intake_data.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(null);
+
+        const step_count_data = Array.isArray(statistic?.step_count_data)
+            ? statistic.step_count_data.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(null);
+
+        const heart_rate_data = Array.isArray(statistic?.heart_rate_data)
+            ? statistic.heart_rate_data.slice(0, dateRange.length)
+            : new Array(dateRange.length).fill(null);
+
+        // Lọc bỏ các giá trị null
+        const filtered_weight_data = weight_data.map(val => val === null ? 0 : val);
+        const filtered_bmi_data = bmi_data.map(val => val === null ? 0 : val);
+        const filtered_water_intake_data = water_intake_data.map(val => val === null ? 0 : val);
+        const filtered_step_count_data = step_count_data.map(val => val === null ? 0 : val);
+        const filtered_heart_rate_data = heart_rate_data.map(val => val === null ? 0 : val);
+
+        return { 
+            labels, 
+            total_sessions, 
+            total_calories_burned, 
+            total_time,
+            weight_data: filtered_weight_data,
+            bmi_data: filtered_bmi_data,
+            water_intake_data: filtered_water_intake_data,
+            step_count_data: filtered_step_count_data,
+            heart_rate_data: filtered_heart_rate_data
+        };
     }
 
-    const { labels, total_sessions, total_calories_burned, total_time } = showStatisticData(statistic, period);
-    console.log("showStatistic data: ", showStatisticData(statistic, period))
+    const { 
+        labels, 
+        total_sessions, 
+        total_calories_burned, 
+        total_time,
+        weight_data,
+        bmi_data,
+        water_intake_data,
+        step_count_data,
+        heart_rate_data
+    } = showStatisticData(statistic, period);
+
+    // Lấy thông tin tổng hợp từ thống kê
+    const health_summary = statistic?.health_summary || {};
+    const weight_change = statistic?.weight_change || 0;
 
     return (
-
-        <ScrollView >
+        <ScrollView>
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 16 }}>
                 <Button
                     mode={period === 'weekly' ? 'contained' : 'outlined'}
-                    onPress={() => setPeriod('weekly')}
+                    onPress={() => {
+                        setPeriod('weekly');
+                        setSelectedDate(moment());
+                    }}
                     style={{ marginHorizontal: 8 }}
                     buttonColor="#a7f3d0"
                     textColor="#065f46"
@@ -135,18 +283,114 @@ const Home = () => {
                 </Button>
                 <Button
                     mode={period === 'monthly' ? 'contained' : 'outlined'}
-                    onPress={() => setPeriod('monthly')}
+                    onPress={() => {
+                        setPeriod('monthly');
+                        setSelectedDate(moment().startOf('month'));
+                    }}
                     style={{ marginHorizontal: 8 }}
                     buttonColor="#a7f3d0"
                     textColor="#065f46"
                 >
                     Tháng
                 </Button>
+                <Button
+                    mode={period === 'yearly' ? 'contained' : 'outlined'}
+                    onPress={() => {
+                        setPeriod('yearly');
+                        setSelectedDate(moment().startOf('year'));
+                    }}
+                    style={{ marginHorizontal: 8 }}
+                    buttonColor="#a7f3d0"
+                    textColor="#065f46"
+                >
+                    Năm
+                </Button>
             </View>
-            <View style={{ marginVertical: 16 }}>
-                <Text style={[MyStyles.label, { marginLeft: 12 }]}>Số buổi đã tập luyện</Text>
-                <Text style={[MyStyles.label, { marginLeft: 12 }, { fontSize: 30 }]}> {total_sessions}</Text>
 
+            <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
+                <Menu
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                    anchor={
+                        <Button
+                            mode="outlined"
+                            onPress={() => setMenuVisible(true)}
+                            style={{ borderColor: '#065f46' }}
+                            textColor="#065f46"
+                        >
+                            {getCurrentDateLabel()}
+                        </Button>
+                    }
+                >
+                    {getDateOptions().map((option, index) => (
+                        <Menu.Item
+                            key={index}
+                            onPress={() => {
+                                setSelectedDate(option.value);
+                                setMenuVisible(false);
+                            }}
+                            title={option.label}
+                        />
+                    ))}
+                </Menu>
+            </View>
+
+            {/* Thông tin tổng hợp */}
+            <Card style={{ margin: 16, backgroundColor: '#f0fdf4' }}>
+                <Card.Title title="Thống Kê Tổng Hợp" titleStyle={{ color: '#065f46' }} />
+                <Card.Content>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Số buổi tập:</Text>
+                        <Text style={{ color: '#065f46', fontSize: 16 }}>{total_sessions}</Text>
+                    </View>
+
+                    {health_summary.avg_weight && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Cân nặng trung bình:</Text>
+                            <Text style={{ color: '#065f46', fontSize: 16 }}>{health_summary.avg_weight.toFixed(1)} kg</Text>
+                        </View>
+                    )}
+
+                    {health_summary.avg_bmi && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>BMI trung bình:</Text>
+                            <Text style={{ color: '#065f46', fontSize: 16 }}>{health_summary.avg_bmi.toFixed(1)}</Text>
+                        </View>
+                    )}
+
+                    {weight_change !== null && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Thay đổi cân nặng:</Text>
+                            <Text 
+                                style={{ 
+                                    fontSize: 16, 
+                                    color: weight_change > 0 ? '#ef4444' : weight_change < 0 ? '#10b981' : '#065f46',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                {weight_change > 0 ? '+' : ''}{weight_change.toFixed(1)} kg
+                            </Text>
+                        </View>
+                    )}
+
+                    {health_summary.avg_step_count && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Số bước trung bình:</Text>
+                            <Text style={{ color: '#065f46', fontSize: 16 }}>{Math.round(health_summary.avg_step_count)} bước</Text>
+                        </View>
+                    )}
+
+                    {health_summary.avg_heart_rate && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Nhịp tim trung bình:</Text>
+                            <Text style={{ color: '#065f46', fontSize: 16 }}>{Math.round(health_summary.avg_heart_rate)} BPM</Text>
+                        </View>
+                    )}
+                </Card.Content>
+            </Card>
+
+            {/* Thống kê tập luyện */}
+            <View style={{ marginVertical: 16 }}>
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Lượng Calo tiêu thụ</Text>
                 <LineChart
                     data={{
@@ -218,6 +462,209 @@ const Home = () => {
                         return null;
                     }}
                 />
+            </View>
+
+            {/* Thống kê sức khỏe */}
+            <View style={{ marginVertical: 16 }}>
+                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Cân nặng (kg)</Text>
+                {weight_data.some(val => val > 0) ? (
+                    <LineChart
+                        data={{
+                            labels: labels,
+                            datasets: [{ data: weight_data }]
+                        }}
+                        width={screenWidth - 24}
+                        height={220}
+                        chartConfig={healthChartConfig}
+                        bezier
+                        style={{ borderRadius: 12, marginHorizontal: 12 }}
+                        formatYLabel={(value) => value}
+                        withInnerLines={false}
+                        withOuterLines={false}
+                        renderDotContent={({ x, y, index, indexData }) => {
+                            if (indexData > 0) {
+                                return (
+                                    <Text
+                                        key={index}
+                                        style={{
+                                            position: 'absolute',
+                                            top: y - 24,
+                                            left: x - 15,
+                                            fontSize: 12,
+                                            color: '#3b82f6',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {indexData.toFixed(1)}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                ) : (
+                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu cân nặng</Text>
+                )}
+
+                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Chỉ số BMI</Text>
+                {bmi_data.some(val => val > 0) ? (
+                    <LineChart
+                        data={{
+                            labels: labels,
+                            datasets: [{ data: bmi_data }]
+                        }}
+                        width={screenWidth - 24}
+                        height={220}
+                        chartConfig={healthChartConfig}
+                        bezier
+                        style={{ borderRadius: 12, marginHorizontal: 12 }}
+                        formatYLabel={(value) => value}
+                        withInnerLines={false}
+                        withOuterLines={false}
+                        renderDotContent={({ x, y, index, indexData }) => {
+                            if (indexData > 0) {
+                                return (
+                                    <Text
+                                        key={index}
+                                        style={{
+                                            position: 'absolute',
+                                            top: y - 24,
+                                            left: x - 15,
+                                            fontSize: 12,
+                                            color: '#3b82f6',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {indexData.toFixed(1)}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                ) : (
+                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu BMI</Text>
+                )}
+
+                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Lượng nước (ml)</Text>
+                {water_intake_data.some(val => val > 0) ? (
+                    <LineChart
+                        data={{
+                            labels: labels,
+                            datasets: [{ data: water_intake_data }]
+                        }}
+                        width={screenWidth - 24}
+                        height={220}
+                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(6, 182, 212, ${opacity})`}}
+                        bezier
+                        style={{ borderRadius: 12, marginHorizontal: 12 }}
+                        formatYLabel={(value) => value}
+                        withInnerLines={false}
+                        withOuterLines={false}
+                        renderDotContent={({ x, y, index, indexData }) => {
+                            if (indexData > 0) {
+                                return (
+                                    <Text
+                                        key={index}
+                                        style={{
+                                            position: 'absolute',
+                                            top: y - 24,
+                                            left: x - 15,
+                                            fontSize: 12,
+                                            color: '#06b6d4',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {indexData}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                ) : (
+                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu uống nước</Text>
+                )}
+
+                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Số bước chân</Text>
+                {step_count_data.some(val => val > 0) ? (
+                    <LineChart
+                        data={{
+                            labels: labels,
+                            datasets: [{ data: step_count_data }]
+                        }}
+                        width={screenWidth - 24}
+                        height={220}
+                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`}}
+                        bezier
+                        style={{ borderRadius: 12, marginHorizontal: 12 }}
+                        formatYLabel={(value) => value}
+                        withInnerLines={false}
+                        withOuterLines={false}
+                        renderDotContent={({ x, y, index, indexData }) => {
+                            if (indexData > 0) {
+                                return (
+                                    <Text
+                                        key={index}
+                                        style={{
+                                            position: 'absolute',
+                                            top: y - 24,
+                                            left: x - 15,
+                                            fontSize: 12,
+                                            color: '#8b5cf6',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {indexData.toFixed(0)}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                ) : (
+                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu số bước chân</Text>
+                )}
+
+                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Nhịp tim (BPM)</Text>
+                {heart_rate_data.some(val => val > 0) ? (
+                    <LineChart
+                        data={{
+                            labels: labels,
+                            datasets: [{ data: heart_rate_data }]
+                        }}
+                        width={screenWidth - 24}
+                        height={220}
+                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`}}
+                        bezier
+                        style={{ borderRadius: 12, marginHorizontal: 12 }}
+                        formatYLabel={(value) => value}
+                        withInnerLines={false}
+                        withOuterLines={false}
+                        renderDotContent={({ x, y, index, indexData }) => {
+                            if (indexData > 0) {
+                                return (
+                                    <Text
+                                        key={index}
+                                        style={{
+                                            position: 'absolute',
+                                            top: y - 24,
+                                            left: x - 15,
+                                            fontSize: 12,
+                                            color: '#ef4444',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {indexData.toFixed(0)}
+                                    </Text>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                ) : (
+                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu nhịp tim</Text>
+                )}
             </View>
         </ScrollView>
     );

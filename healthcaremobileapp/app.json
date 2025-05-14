@@ -4,6 +4,14 @@
     "name": "healthcaremobileapp",
     "slug": "healthcaremobileapp",
     "scheme": "healthcaremobileapp",
+    "plugins": [
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ]
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +30,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.healthcaremobileapp"
+      "package": "com.dhieuz.healthcaremobileapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,7 +40,8 @@
         "projectId": "6180b71d-cff2-4eaf-a9be-191350924b62"
       }
     },
-
+    "runtimeVersion": "1.0.0"
+    ,
     "updates": {
       "url": "https://u.expo.dev/6180b71d-cff2-4eaf-a9be-191350924b62"
     }
