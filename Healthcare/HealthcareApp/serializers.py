@@ -34,9 +34,19 @@ class RegisterSerializer(ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
-        return user
+        try:
+            validated_data.pop('password2')
+            avatar = validated_data.pop('avatar', None)
+            
+            user = User.objects.create_user(**validated_data)
+            
+            if avatar:
+                user.avatar = avatar
+                user.save()
+                
+            return user
+        except Exception as e:
+            raise ValidationError({"error": f"Lỗi khi tạo tài khoản: {str(e)}"})
 
 # class LoginSerializer(ModelSerializer):
 #     username = CharField(write_only=True, required=True)
@@ -114,6 +124,11 @@ class HealthStatSerializer(ModelSerializer):
     class Meta:
         model = HealthStat
         fields ='__all__'
+        extra_kwargs = {
+            'bmi': {
+                "read_only": True
+            }
+        }
 
 class ExerciseSerializer(ModelSerializer):
     class Meta:

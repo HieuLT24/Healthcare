@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-cfu@qe^h618jfp*k&+1)+(p2i6p7*-y&ts%fc)-%7x%a)txbnb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '192.168.1.15', 'localhost']
 
 # Application definition
 
@@ -110,7 +110,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://10.0.2.2:8000",  # Android emulator
     "exp://192.168.1.15:19000",
+    "http://localhost:19006",
+    "http://localhost:19000",
+    "http://localhost:19001",
+    "http://localhost:19002",
+    "http://localhost:3000",
+    "exp://localhost:19000",
 ]
+
+# Enable this in development to allow all origins
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
