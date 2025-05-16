@@ -80,51 +80,76 @@ const Register = () => {
 
     }
 
+
     const register = async () => {
         if (validate() === true) {
             try {
                 setLoading(true);
 
                 let form = new FormData();
-                for (let key in user) {
-                    if (key !== 'password2') {
-                        if (key === 'avatar') {
-                            if (user.avatar) {
-                                form.append('avatar', {
-                                    uri: user.avatar.uri,
-                                    name: user.avatar.name,
-                                    type: user.avatar.type,
-                                });
-                            } else {
-                                // LUÔN gửi avatar, nếu không có thì là chuỗi rỗng
-                                form.append(key, user[key]);
-                            }
-                        }
-                    }
+                
+                // Thêm các trường cơ bản một cách rõ ràng
+                form.append('first_name', user.first_name || '');
+                form.append('last_name', user.last_name || '');
+                form.append('username', user.username || '');
+                form.append('password', user.password || '');
+                form.append('password2', user.password2 || '');
+                
+                // Xử lý avatar nếu có
+                if (user.avatar) {
+                    form.append('avatar', {
+                        uri: user.avatar.uri,
+                        name: user.avatar.fileName || `avatar-${Date.now()}.jpeg`,
+                        type: user.avatar.mimeType || 'image/jpeg'
+                    });
                 }
 
-                // Debug log
-
-
-                console.log('Form data:', form);
-                console.log('User data:', user);
-                await Apis.post(endpoints['register'], form, {
+                console.log('Form data fields:', form._parts.map(p => p[0]));
+                
+                const response = await Apis.post(endpoints['register'], form, {
                     headers: {
-                        
                         'Content-Type': 'multipart/form-data',
-                    }
+                    },
+                    timeout: 15000
                 });
+                
                 if (response.status === 201) {
                     Alert.alert("Thành công", "Đăng ký thành công!", [
                         {
                             text: "OK",
-                            onPress: () => nav.navigate('Login')
+                            onPress: () => nav.navigate('login')
                         }
                     ]);
                 }
             } catch (ex) {
-                console.error(ex);
-
+                console.error("Register error:", ex);
+                
+                let errorMessage = "Đăng ký không thành công. ";
+                
+                if (ex.response) {
+                    // Chi tiết lỗi từ server
+                    console.log("Server response:", ex.response.status);
+                    console.log("Error data:", ex.response.data);
+                    
+                    if (typeof ex.response.data === 'object') {
+                        // Xử lý lỗi trả về dạng object
+                        const errors = [];
+                        for (const [field, msgs] of Object.entries(ex.response.data)) {
+                            if (Array.isArray(msgs)) {
+                                errors.push(`${field}: ${msgs.join(', ')}`);
+                            } else {
+                                errors.push(`${field}: ${msgs}`);
+                            }
+                        }
+                        errorMessage += errors.join('\n');
+                    } else {
+                        errorMessage += ex.response.data || `Mã lỗi: ${ex.response.status}`;
+                    }
+                } else {
+                    errorMessage += ex.message;
+                }
+                
+                Alert.alert("Lỗi", errorMessage);
             } finally {
                 setLoading(false);
             }

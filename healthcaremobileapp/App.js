@@ -13,7 +13,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Login from './screens/Auth/Login';
 import Register from './screens/Auth/Register';
 import Profile from './screens/Profile/Profile';
-import Home from './screens/Home/Home';
+import Statistic from './screens/Home/Statistic';
+import Status from './screens/Home/Status';
 import Reminder from './screens/Reminder/Reminder';
 
 import RefreshableScreen from './components/RefreshableScreen';
@@ -64,7 +65,7 @@ const HomeTabs = () => (
   <Tab.Navigator screenOptions={{ headerShown: false }}>
     <Tab.Screen
       name="Lịch sử tập luyện"
-      component={Home}
+      component={Statistic}
       options={{
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="chart-line" size={size} color={color} />
@@ -73,7 +74,7 @@ const HomeTabs = () => (
     />
     <Tab.Screen
       name="Chỉ số cá nhân"
-      component={Profile}
+      component={Status}
       options={{
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
@@ -106,11 +107,9 @@ const App = () => {
     <PaperProvider>
       <MyUserContext.Provider value={user}>
         <MyDispatchContext.Provider value={dispatch}>
-          <RefreshableScreen>
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-          </RefreshableScreen>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
         </MyDispatchContext.Provider>
       </MyUserContext.Provider>
     </PaperProvider>

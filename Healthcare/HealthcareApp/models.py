@@ -43,7 +43,7 @@ class User(AbstractUser):
 
 class HealthStat(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='health_stats')
-    date = models.DateField(auto_now_add=True)
+    date = models.DateTimeField(auto_now_add=True)
     weight = models.FloatField(null=True, blank=True)  # kg
     height = models.FloatField(null=True, blank=True)  # m
     bmi = models.FloatField(null=True, blank=True)
@@ -54,7 +54,7 @@ class HealthStat(models.Model):
     def save(self, *args, **kwargs):
         if self.height and self.weight:
             try:
-                self.bmi = self.weight / (self.height ** 2)
+                self.bmi = self.weight / ((self.height*0.01) ** 2)
             except ZeroDivisionError:
                 self.bmi = None
         super().save(*args, **kwargs)
