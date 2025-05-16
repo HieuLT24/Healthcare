@@ -133,10 +133,9 @@ const Profile = () => {
     return (
         <ScrollView>
             <Text style={MyStyles.subject}>Chào {user.username}!</Text>
-            
             {renderHealthStats()}
             {renderHealthChanges()}
-            
+
             <Button onPress={logout} mode="contained" style={MyStyles.m}>Đăng xuất</Button>
         </ScrollView>
     );
