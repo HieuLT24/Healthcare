@@ -14,7 +14,6 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, endpoints } from '../../configs/Apis';
 import MyStyles from '../../styles/MyStyles';
-// import { getUserConversations, subscribeToUserConversations, getUserData } from '../../utils/FirebaseService';
 
 const ConversationList = () => {
     const [conversations, setConversations] = useState([]);
@@ -36,11 +35,6 @@ const ConversationList = () => {
         };
     }, []);
 
-    // useEffect(() => {
-    //     if (currentUser) {
-    //         initializeFirebaseConversations();
-    //     }
-    // }, [currentUser]);
 
     const loadCurrentUser = async () => {
         try {
@@ -170,111 +164,6 @@ const ConversationList = () => {
         );
     };
 
-    // const initializeFirebaseConversations = async () => {
-    //     try {
-    //         setLoading(true);
-
-    //         // Subscribe to user conversations in real-time
-    //         const unsubscribe = subscribeToUserConversations(
-    //             currentUser.id.toString(),
-    //             async (firebaseConversations) => {
-    //                 try {
-    //                     // Process and enrich conversations with user data
-    //                     const enrichedConversations = await Promise.all(
-    //                         firebaseConversations.map(async (conv) => {
-    //                             try {
-    //                                 // Find the other user ID in the conversation
-    //                                 const otherUserId = conv.participants.find(
-    //                                     id => id !== currentUser.id.toString()
-    //                                 );
-
-    //                                 if (!otherUserId) return null;
-
-    //                                 // Get other user details from cache or fetch
-    //                                 let otherUser;
-    //                                 if (usersCache[otherUserId]) {
-    //                                     otherUser = usersCache[otherUserId];
-    //                                 } else {
-    //                                     // Get user from backend
-    //                                     try {
-    //                                         const token = await AsyncStorage.getItem('token');
-    //                                         console.log(`Fetching user data for ID: ${otherUserId}`);
-    //                                         const userRes = await authApi(token).get(`${endpoints['users']}${otherUserId}/`);
-    //                                         console.log('User API response:', userRes.status);
-    //                                         otherUser = userRes.data;
-                                            
-    //                                         // Update cache
-    //                                         setUsersCache(prev => ({
-    //                                             ...prev,
-    //                                             [otherUserId]: otherUser
-    //                                         }));
-    //                                     } catch (error) {
-    //                                         console.error("Error fetching user data:", error);
-    //                                         console.error("Error response:", error.response ? {
-    //                                             status: error.response.status,
-    //                                             data: error.response.data
-    //                                         } : 'No response');
-                                            
-    //                                         // Fallback data if we can't get user details
-    //                                         otherUser = {
-    //                                             id: otherUserId,
-    //                                             first_name: "Người dùng",
-    //                                             last_name: otherUserId,
-    //                                             avatar: null
-    //                                         };
-    //                                     }
-    //                                 }
-
-    //                                 return {
-    //                                     ...conv,
-    //                                     otherUser,
-    //                                     lastMessage: conv.lastMessage || null
-    //                                 };
-    //                             } catch (err) {
-    //                                 console.error("Error processing conversation:", err);
-    //                                 return null;
-    //                             }
-    //                         })
-    //                     );
-
-    //                     // Filter out any nulls and sort by most recent
-    //                     const validConversations = enrichedConversations
-    //                         .filter(Boolean)
-    //                         .sort((a, b) => {
-    //                             const dateA = a.lastMessage?.createdAt || a.updatedAt || a.createdAt;
-    //                             const dateB = b.lastMessage?.createdAt || b.updatedAt || b.createdAt;
-                                
-    //                             // Convert Firebase timestamps to Date objects if needed
-    //                             const timeA = dateA instanceof Date ? dateA : new Date(dateA);
-    //                             const timeB = dateB instanceof Date ? dateB : new Date(dateB);
-                                
-    //                             return timeB - timeA;
-    //                         });
-
-    //                     setConversations(validConversations);
-    //                     setLoading(false);
-    //                 } catch (error) {
-    //                     console.error("Error processing conversations:", error);
-    //                     Alert.alert("Lỗi", "Không thể xử lý dữ liệu cuộc trò chuyện");
-    //                     setLoading(false);
-    //                 }
-    //             }
-    //         );
-
-    //         setUnsubscribeConversations(unsubscribe);
-            
-    //     } catch (error) {
-    //         console.error("Failed to initialize Firebase conversations:", error);
-    //         if (error.response) {
-    //             console.error("Error status:", error.response.status);
-    //             console.error("Error data:", JSON.stringify(error.response.data));
-    //             Alert.alert("Lỗi máy chủ", `Lỗi ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-    //         } else {
-    //             Alert.alert("Lỗi", "Không thể tải cuộc trò chuyện: " + error.message);
-    //         }
-    //         setLoading(false);
-    //     }
-    // };
 
     return (
         <View style={MyStyles.container}>

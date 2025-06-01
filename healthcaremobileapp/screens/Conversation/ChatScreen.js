@@ -17,7 +17,6 @@ import { Avatar } from 'react-native-paper';
 import { authApi, endpoints } from '../../configs/Apis';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, useNavigation } from '@react-navigation/native';
-// import { getConversationBetweenUsers, createConversation, subscribeToMessages, markMessagesAsRead, sendFirebaseMessage } from '../../utils/FirebaseService';
 
 
 const ChatScreen = () => {
@@ -26,7 +25,6 @@ const ChatScreen = () => {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
     const [unsubscribeMessages, setUnsubscribeMessages] = useState(null);
-    // const [firebaseConversation, setFirebaseConversation] = useState(null);
     const flatListRef = useRef(null);
     const route = useRoute();
     const navigation = useNavigation();
@@ -59,12 +57,7 @@ const ChatScreen = () => {
         };
     }, []);
 
-    useEffect(() => {
-        // Initialize Firebase chat when both current user and conversation info are available
-        if (currentUser && otherUser) {
-            // initializeFirebaseChat();
-        }
-    }, [currentUser]);
+
 
 
     const loadCurrentUser = async () => {
@@ -89,129 +82,6 @@ const ChatScreen = () => {
             Alert.alert("Lỗi", "Không thể tải thông tin người dùng");
         }
     };
-
-    // const initializeFirebaseChat = async () => {
-    //     try {
-    //         setLoading(true);
-            
-    //         // Kiểm tra lại currentUser trước khi sử dụng
-    //         if (!currentUser || !currentUser.id) {
-    //             throw new Error("Không tìm thấy thông tin người dùng hiện tại");
-    //         }
-            
-    //         // Kiểm tra otherUser trước khi sử dụng
-    //         if (!otherUser || !otherUser.id) {
-    //             throw new Error("Không tìm thấy thông tin người dùng đối tác");
-    //         }
-            
-    //         let conversation;
-            
-    //         // Try to get existing conversation
-    //         conversation = await getConversationBetweenUsers(
-    //             currentUser.id.toString(), 
-    //             otherUser.id.toString()
-    //         );
-            
-    //         // If no conversation exists, create one
-    //         if (!conversation) {
-    //             console.log("Không tìm thấy cuộc hội thoại, đang tạo mới...");
-    //             conversation = await createConversation(
-    //                 currentUser.id.toString(),
-    //                 otherUser.id.toString()
-    //             );
-    //         }
-            
-    //         if (!conversation || !conversation.id) {
-    //             throw new Error("Không thể tạo hoặc tìm cuộc hội thoại");
-    //         }
-            
-    //         console.log("Đã khởi tạo cuộc hội thoại với ID:", conversation.id);
-    //         setFirebaseConversation(conversation);
-            
-    //         // Subscribe to messages
-    //         const unsubscribe = subscribeToMessages(conversation.id, (updatedMessages) => {
-    //             setMessages(updatedMessages);
-                
-    //             // Mark messages as read
-    //             markMessagesAsRead(conversation.id, currentUser.id.toString());
-                
-    //             // Scroll to bottom on next render
-    //             setTimeout(() => {
-    //                 flatListRef.current?.scrollToEnd({ animated: false });
-    //             }, 200);
-    //         });
-            
-    //         setUnsubscribeMessages(unsubscribe);
-    //         setLoading(false);
-            
-    //     } catch (error) {
-    //         console.error("Error initializing Firebase chat:", error);
-    //         Alert.alert("Lỗi", "Không thể kết nối đến dịch vụ chat");
-    //         setLoading(false);
-    //     }
-    // };
-
-    // const handleSendMessage = async () => {
-    //     if (!inputText.trim() || !currentUser || !firebaseConversation) return;
-        
-    //     try {
-    //         const trimmedMessage = inputText.trim();
-    //         setInputText('');
-            
-    //         // Add optimistic message to UI
-    //         const optimisticMessage = {
-    //             id: 'temp-' + Date.now(),
-    //             senderId: currentUser.id.toString(),
-    //             content: trimmedMessage,
-    //             isRead: false,
-    //             createdAt: new Date(),
-    //             temp: true
-    //         };
-            
-    //         setMessages(prev => [...prev, optimisticMessage]);
-            
-    //         setTimeout(() => {
-    //             flatListRef.current?.scrollToEnd({ animated: true });
-    //         }, 100);
-            
-    //         // Gửi tin nhắn qua Firebase
-    //         const sentMessage = await sendFirebaseMessage(
-    //             firebaseConversation.id,
-    //             currentUser.id.toString(),
-    //             trimmedMessage,
-    //             otherUser.id.toString()
-    //         );
-            
-    //         // Xóa tin nhắn tạm thời và thêm tin nhắn chính thức
-    //         setMessages(prev => {
-    //             // Lọc bỏ tin nhắn tạm thời
-    //             const filteredMessages = prev.filter(msg => msg.id !== optimisticMessage.id);
-    //             // Thêm tin nhắn đã gửi thành công
-    //             return [...filteredMessages, sentMessage];
-    //         });
-            
-    //         // Nếu là cuộc trò chuyện tạm thời, mô phỏng tin nhắn đã đọc
-    //         if (firebaseConversation.isTemporary || firebaseConversation.isEmergency) {
-    //             setTimeout(() => {
-    //                 setMessages(prev => {
-    //                     return prev.map(msg => {
-    //                         if (msg.id === sentMessage.id) {
-    //                             return { ...msg, isRead: true };
-    //                         }
-    //                         return msg;
-    //                     });
-    //                 });
-    //             }, 2000);
-    //         }
-            
-    //     } catch (error) {
-    //         console.error("Failed to send message:", error);
-    //         Alert.alert("Lỗi", "Không thể gửi tin nhắn");
-            
-    //         // Remove optimistic message on error
-    //         setMessages(prev => prev.filter(msg => !msg.temp));
-    //     }
-    // };
 
     const formatTime = (dateString) => {
         try {

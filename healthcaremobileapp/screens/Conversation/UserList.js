@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import MyStyles from '../../styles/MyStyles';
 import { authApi, endpoints } from '../../configs/Apis';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { getConversationBetweenUsers, createConversation } from '../../utils/FirebaseService';
 
 
 const ExpertList = () => {
