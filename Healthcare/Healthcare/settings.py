@@ -29,7 +29,6 @@ ALLOWED_HOSTS = ['*', '192.168.1.15', 'localhost']
 # Application definition
 
 INSTALLED_APPS = [
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sites',
@@ -56,7 +55,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.facebook',
-    'rest_framework_simplejwt.token_blacklist',
     'rest_framework.authtoken',
     'oauth2_provider',
 
@@ -182,7 +180,6 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -190,14 +187,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-# SIMPLE_JWT = {
-#     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-#     "BLACKLIST_AFTER_ROTATION": True,
-#     "ROTATE_REFRESH_TOKENS": True,
-# }
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -264,4 +254,5 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # Tắt/bật đăng nhập bằng username/password
 }
 
-
+client_id='XACNF8vlciv5XLCHD5mgR4fkOjl5FD9AR4axIeS3'
+client_secret = 'IDgWxpeSwUo8wwZFZIQZx5z1wyphov496QCTvhWThaPaTGgK51FaC2JqcdDtUwCejlvuar4QUB77vlSlHP1dV5jSK4YOamS882lVRwHxwMtk9FIJK68JTvYZXtyPNwWt'

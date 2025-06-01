@@ -16,6 +16,10 @@ import Profile from './screens/Profile/Profile';
 import Statistic from './screens/Home/Statistic';
 import Status from './screens/Home/Status';
 import Reminder from './screens/Reminder/Reminder';
+import ChatScreen from './screens/Conversation/ChatScreen';
+import ConversationList from './screens/Conversation/ConversationList';
+import Messages from './screens/Conversation/Messages';
+import UserList from './screens/Conversation/UserList';
 
 import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
@@ -30,8 +34,8 @@ const AppDrawer = () => (
     <Drawer.Screen name="Workout" component={HomeTabs} />
     <Drawer.Screen name="Reminder" component={Reminder} />
     <Drawer.Screen name="Nutrition" component={HomeTabs} />
-
     <Drawer.Screen name="Hồ sơ" component={Profile} />
+    <Drawer.Screen name="Conversation" component={ConversationTabs} />
   </Drawer.Navigator>
 );
 
@@ -83,6 +87,13 @@ const HomeTabs = () => (
     />
 
 
+  </Tab.Navigator>
+);
+
+const ConversationTabs = () => (
+  <Tab.Navigator>
+    <Tab.Screen name="ConversationList" component={ConversationList} />
+    <Tab.Screen name="UserList" component={UserList} />
   </Tab.Navigator>
 );
 

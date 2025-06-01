@@ -29,6 +29,9 @@ from django.utils.timezone import now
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
     ExerciseSerializer, NutritionGoalSerializer
 
+from django.db import models
+from drf_yasg import openapi
+
 
 # Create your views here.
 
@@ -691,3 +694,88 @@ class HealthStatViewSet(viewsets.ModelViewSet):
             } if last_record else None,
             'changes': changes
         }
+
+class ExpertCoachListView(generics.ListAPIView):
+    """API lấy danh sách chuyên gia và huấn luyện viên"""
+    serializer_class = serializers.ExpertCoachSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Lấy danh sách user có role là EXPERT hoặc COACH
+        Có thể filter theo role thông qua query parameter
+        """
+        queryset = User.objects.filter(
+            is_active=True,
+            role__in=[Role.EXPERT.value, Role.COACH.value]
+        ).order_by('-date_joined')
+        
+        # Filter theo role cụ thể nếu có
+        role_filter = self.request.query_params.get('role', None)
+        if role_filter and role_filter in [Role.EXPERT.value, Role.COACH.value]:
+            queryset = queryset.filter(role=role_filter)
+            
+        # Tìm kiếm theo tên
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                models.Q(first_name__icontains=search) |
+                models.Q(last_name__icontains=search) |
+                models.Q(username__icontains=search)
+            )
+            
+        return queryset
+    
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách chuyên gia và huấn luyện viên",
+        manual_parameters=[
+            openapi.Parameter(
+                'role',
+                openapi.IN_QUERY,
+                description="Lọc theo role (expert hoặc coach)",
+                type=openapi.TYPE_STRING,
+                enum=[Role.EXPERT.value, Role.COACH.value]
+            ),
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Danh sách chuyên gia/huấn luyện viên",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'username': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'first_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'last_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'full_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'email': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'role': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar_url': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_of_birth': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                                    'health_goals': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_joined': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                                }
+                            )
+                        )
+                    }
+                )
+            )
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

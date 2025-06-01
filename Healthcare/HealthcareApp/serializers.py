@@ -5,7 +5,6 @@ from rest_framework.serializers import ModelSerializer
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
     Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 
 
@@ -93,7 +92,27 @@ class RegisterSerializer(ModelSerializer):
 class UserSerializer(ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['avatar'] = instance.avatar.url if instance.avatar else ''
+        # Xử lý avatar URL an toàn và trả về absolute URL
+        avatar_url = ''
+        if instance.avatar:
+            try:
+                if hasattr(instance.avatar, 'url'):
+                    avatar_url = instance.avatar.url
+                    # Nếu URL không phải absolute URL, thêm base URL
+                    if avatar_url and not avatar_url.startswith('http'):
+                        request = self.context.get('request')
+                        if request:
+                            avatar_url = request.build_absolute_uri(avatar_url)
+                elif isinstance(instance.avatar, str):
+                    avatar_url = instance.avatar
+                    if not avatar_url.startswith('http'):
+                        request = self.context.get('request')
+                        if request:
+                            avatar_url = request.build_absolute_uri(avatar_url)
+            except Exception as e:
+                print(f"Error getting avatar URL for user {instance.username}: {str(e)}")
+                avatar_url = ''
+        data['avatar'] = avatar_url
         return data
 
     class Meta:
@@ -213,5 +232,62 @@ class FoodItemSerializer(ModelSerializer):
     class Meta:
         model = FoodItem
         fields =['id','name','unit','calories',
-                 'proteins','carbs','fats', 'quantities'
-                 ]
+                 'proteins','carbs','fats','quantities']
+
+class ExpertCoachSerializer(ModelSerializer):
+    """Serializer cho danh sách chuyên gia và huấn luyện viên"""
+    full_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 
+                 'email', 'role', 'avatar', 'avatar_url', 'date_of_birth', 
+                 'health_goals', 'date_joined']
+        
+    def get_full_name(self, obj):
+        """Trả về tên đầy đủ"""
+        if obj.first_name and obj.last_name:
+            return f"{obj.first_name} {obj.last_name}"
+        return obj.username
+        
+    def get_avatar_url(self, obj):
+        """Trả về URL avatar đầy đủ"""
+        if obj.avatar:
+            try:
+                # Xử lý CloudinaryField đặc biệt
+                if hasattr(obj.avatar, 'url'):
+                    avatar_url = str(obj.avatar.url)
+                    
+                    # Cloudinary URLs thường đã là absolute URLs
+                    if avatar_url.startswith('http'):
+                        return avatar_url
+                    
+                    # Nếu không phải absolute URL, thêm base URL
+                    if avatar_url and not avatar_url.startswith('http'):
+                        # Đối với Cloudinary, có thể cần build URL theo cách khác
+                        if hasattr(obj.avatar, 'build_url'):
+                            return obj.avatar.build_url()
+                        
+                        request = self.context.get('request')
+                        if request:
+                            avatar_url = request.build_absolute_uri(avatar_url)
+                    
+                    return avatar_url
+                    
+                # Nếu là string (đường dẫn), xử lý tương tự
+                elif isinstance(obj.avatar, str):
+                    avatar_url = obj.avatar
+                    if avatar_url.startswith('http'):
+                        return avatar_url
+                        
+                    request = self.context.get('request')
+                    if request:
+                        avatar_url = request.build_absolute_uri(avatar_url)
+                    return avatar_url
+                    
+            except Exception as e:
+                # Log lỗi để debug
+                print(f"Error getting avatar URL for user {obj.username}: {str(e)}")
+                
+        return None

@@ -1,6 +1,6 @@
 import axios from "axios"
 
-export const BASE_URL = "http://192.168.100.179:8000"
+export const BASE_URL = "http://192.168.1.15:8000"
 
 
 export const endpoints = {
@@ -11,7 +11,8 @@ export const endpoints = {
     'my-statistics': 'api/my-statistics/',
     'current-user': `users/current-user/`,
     'health-stats': 'healthstat/',
-    'health-stats-track-changes': 'healthstat/track-changes/'
+    'health-stats-track-changes': 'healthstat/track-changes/',
+    'experts': 'api/experts-coaches'
 }
 
 export const authApi = (token) => {
