@@ -3,10 +3,10 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from .utils import summarize_nutrition
 from .forms import CustomUserCreationForm
-from .models import (Conversation, Diary, Exercise,
-                     FoodItem, Meal, Message,
+from .models import (Diary, Exercise,
+                     FoodItem, Meal,
                      MuscleGroup, NutritionGoal,
-                     NutritionPlan, Reminder, WorkoutSession, User)
+                     NutritionPlan, WorkoutSession, User)
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 class CourseAppAdminSite(admin.AdminSite):
@@ -95,24 +95,6 @@ class MealAdmin(BaseAdmin):
 
 class NutritionPlanAdmin(BaseAdmin):
     readonly_fields = ('total_calories', 'total_carbs', 'total_proteins', 'total_fats')
-    #
-    # def nutritional_summary(self, obj):
-    #     all_food_items = []
-    #     for meal in obj.meals.all():
-    #         all_food_items.extend(meal.food_items.all())
-    #
-    #     summary = summarize_nutrition(all_food_items)
-    #     total_calories = summary['calories']
-    #     total_carbs = summary['carbs']
-    #     total_proteins = summary['proteins']
-    #     total_fats = summary['fats']
-    #
-    #     return(
-    #         total_calories,
-    #         total_carbs,
-    #         total_proteins,
-    #         total_fats,
-    #     )
 
 class MessageAdmin(BaseAdmin):
     pass
@@ -135,15 +117,12 @@ class WorkoutSessionAdmin(BaseAdmin):
 
 admin_site.register(SocialApp)
 admin_site.register(Site)
-admin_site.register(Conversation, ConversationAdmin)
 admin_site.register(Diary, DiaryAdmin)
 admin_site.register(Exercise, ExerciseAdmin)
 admin_site.register(FoodItem, FoodItemAdmin)
 admin_site.register(Meal, MealAdmin)
-admin_site.register(Message, MessageAdmin)
 admin_site.register(MuscleGroup, MuscleGroupAdmin)
 admin_site.register(NutritionGoal, NutritionGoalAdmin)
 admin_site.register(NutritionPlan, NutritionPlanAdmin)
-admin_site.register(Reminder, ReminderAdmin)
 admin_site.register(WorkoutSession, WorkoutSessionAdmin)
 admin_site.register(User, UserAdmin)

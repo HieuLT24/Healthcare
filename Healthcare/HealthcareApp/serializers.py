@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField
 from rest_framework.serializers import ModelSerializer
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
-    Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
+     NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 
@@ -188,22 +188,6 @@ class DiarySerializer(ModelSerializer):
         fields =['id','is_active','name','content','workout_session' ]
         read_only_fields = ['user']
 
-
-class ReminderSerializer(ModelSerializer):
-    class Meta:
-        model = Reminder
-        fields =['id','is_active','name','description',
-                 'time','repeat','reminder_type','user']
-
-class ConversationSerializer(ModelSerializer):
-    class Meta:
-        model = Conversation
-        fields ='__all__'
-
-class MessageSerializer(ModelSerializer):
-    class Meta:
-        model = Message
-        fields ='__all__'
 
 class MuscleGroupSerializer(ModelSerializer):
     class Meta:

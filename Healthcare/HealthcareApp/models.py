@@ -127,68 +127,68 @@ class Diary(BaseModel):
     def __str__(self):
         return self.name
 
-class Reminder(BaseModel):
-    name = models.CharField(max_length=255)
-    description = models.TextField(null=True)
-    time = models.DateTimeField(default=None)
-    repeat = models.BooleanField(default=1)
-    reminder_type = models.CharField(max_length=50, choices=[(rt.name, rt.value) for rt in ReminderType])
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE,
-                             related_name='reminders',
-                             related_query_name='my_reminder')
+# class Reminder(BaseModel):
+#     name = models.CharField(max_length=255)
+#     description = models.TextField(null=True)
+#     time = models.DateTimeField(default=None)
+#     repeat = models.BooleanField(default=1)
+#     reminder_type = models.CharField(max_length=50, choices=[(rt.name, rt.value) for rt in ReminderType])
+#     user = models.ForeignKey(User,
+#                              on_delete=models.CASCADE,
+#                              related_name='reminders',
+#                              related_query_name='my_reminder')
+#
+#     def __str__(self):
+#         return self.name
 
-    def __str__(self):
-        return self.name
+# class Conversation(BaseModel):
+#     name = models.CharField(max_length=100,default=None)
+#     sender_1 = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         related_name='conversations_sent_by_1'
+#     )
+#     sender_2 = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         related_name='conversations_sent_by_2'
+#     )
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(
+#                 fields=['sender_1', 'sender_2'], name='unique_conversation'
+#             ),
+#             models.CheckConstraint(
+#                 check=models.Q(sender_1__lt=models.F('sender_2')),
+#                 name='check_sender_order'
+#             )
+#         ]
+#
+#     def __str__(self):
+#         return self.name
 
-class Conversation(BaseModel):
-    name = models.CharField(max_length=100,default=None)
-    sender_1 = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='conversations_sent_by_1'
-    )
-    sender_2 = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='conversations_sent_by_2'
-    )
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['sender_1', 'sender_2'], name='unique_conversation'
-            ),
-            models.CheckConstraint(
-                check=models.Q(sender_1__lt=models.F('sender_2')),
-                name='check_sender_order'
-            )
-        ]
-
-    def __str__(self):
-        return self.name
-
-class Message(BaseModel):
-    name = models.CharField(max_length=100, default='Message')
-    conversation = models.ForeignKey(
-        Conversation,
-        on_delete=models.CASCADE,
-        related_name='messages'
-    )
-    content = models.TextField(default=None)
-    sender = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='messages_sent'
-    )
-    receiver = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='messages_received'
-    )
-    time_stamp = models.DateTimeField(null=True, auto_now_add=True)
-
-    def __str__(self):
-        return self.name
+# class Message(BaseModel):
+#     name = models.CharField(max_length=100, default='Message')
+#     conversation = models.ForeignKey(
+#         Conversation,
+#         on_delete=models.CASCADE,
+#         related_name='messages'
+#     )
+#     content = models.TextField(default=None)
+#     sender = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         related_name='messages_sent'
+#     )
+#     receiver = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         related_name='messages_received'
+#     )
+#     time_stamp = models.DateTimeField(null=True, auto_now_add=True)
+#
+#     def __str__(self):
+#         return self.name
 
 class NutritionGoal(BaseModel):
     name= models.CharField(max_length=100, default=None)

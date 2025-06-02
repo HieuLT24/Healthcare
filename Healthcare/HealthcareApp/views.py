@@ -12,13 +12,13 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from HealthcareApp import serializers
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
-    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem, HealthStat
+from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, NutritionGoal, \
+    NutritionPlan, Role, Meal, FoodItem, HealthStat
 from django.http import HttpResponse
 
 from collections import defaultdict
@@ -27,7 +27,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
-    ExerciseSerializer, NutritionGoalSerializer
+    ExerciseSerializer
 
 from django.db import models
 from drf_yasg import openapi
@@ -188,47 +188,6 @@ class DiaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-class ReminderViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.DestroyModelMixin,
-                      mixins.UpdateModelMixin,
-                      viewsets.GenericViewSet):
-
-    queryset = Reminder.objects.filter(is_active=True)
-    serializer_class = serializers.ReminderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Reminder.objects.filter(user = self.request.user, is_active=True)
-
-    def perform_update(self, serializer):
-        # Đảm bảo chỉ user sở hữu mới được update
-        instance = self.get_object()
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền sửa reminder này.")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        # Đảm bảo chỉ user sở hữu mới được xóa
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền xóa reminder này.")
-        instance.delete()
-
-
-
-class MessagesViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.filter(is_active=True)
-    serializer_class = serializers.MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.filter(is_active=True)
-    serializer_class = serializers.ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
 class NutritionGoalViewSet(viewsets.ModelViewSet):
