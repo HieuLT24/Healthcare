@@ -12,7 +12,8 @@ export const endpoints = {
     'current-user': `users/current-user/`,
     'health-stats': 'healthstat/',
     'health-stats-track-changes': 'healthstat/track-changes/',
-    'experts': 'api/experts-coaches'
+    'experts': 'api/experts-coaches',
+    'user-info': 'user-infor/'
 }
 
 export const authApi = (token) => {

@@ -90,10 +90,62 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
+class UserInforViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserInforSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách người dùng",
+        manual_parameters=[
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ]
+    )
+    def list(self, request):
+        """
+        Lấy danh sách tất cả người dùng có role là user
+        """
+        queryset = self.queryset
+        
+        # Tìm kiếm theo tên
+        search = request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(username__icontains=search)
+            )
+        
+        # Sắp xếp theo ngày tham gia
+        queryset = queryset.order_by('-date_joined')
+        
+        serializer = self.serializer_class(queryset, many=True, context={'request': request})
+        return Response({
+            'count': queryset.count(),
+            'results': serializer.data
+        })
+
+    @swagger_auto_schema(
+        operation_description="Lấy thông tin chi tiết của một người dùng"
+    )
+    def retrieve(self, request, pk=None):
+        """
+        Lấy thông tin chi tiết của một người dùng
+        """
+        try:
+            user = User.objects.get(pk=pk, is_active=True)
+            serializer = self.serializer_class(user, context={'request': request})
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Không tìm thấy người dùng hoặc người dùng không'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class ExerciseViewSet(viewsets.ModelViewSet):

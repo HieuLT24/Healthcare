@@ -117,7 +117,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'avatar']
+        fields = ['id','username', 'password', 'first_name', 'last_name', 'avatar', 'role']
         extra_kwargs = {
             'username': {
                 "read_only": True
@@ -137,7 +137,7 @@ class UserSerializer(ModelSerializer):
 class UserInforSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role']
 
 class HealthStatSerializer(ModelSerializer):
     class Meta:
