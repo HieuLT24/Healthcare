@@ -5,6 +5,7 @@ import MyStyles from "../../styles/MyStyles";
 import { Button, Card, ActivityIndicator } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { getLatestHealthStat, fetchHealthStats } from "../../utils/healthStatService";
+import RefreshableScreen from "../../components/RefreshableScreen";
 
 const Profile = () => {
     const user = useContext(MyUserContext);
@@ -20,27 +21,31 @@ const Profile = () => {
         });
     }
 
+    const loadHealthData = async () => {
+        try {
+            setLoading(true);
+            // Fetch latest health stat
+            const latestStat = await getLatestHealthStat();
+            setHealthStat(latestStat);
+
+            // Fetch weekly changes
+            const weeklyStats = await fetchHealthStats('weekly');
+            setHealthChanges(weeklyStats.changes);
+        } catch (err) {
+            console.error("Error loading health data:", err);
+            setError("Không thể tải dữ liệu sức khỏe");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadHealthData = async () => {
-            try {
-                setLoading(true);
-                // Fetch latest health stat
-                const latestStat = await getLatestHealthStat();
-                setHealthStat(latestStat);
-
-                // Fetch weekly changes
-                const weeklyStats = await fetchHealthStats('weekly');
-                setHealthChanges(weeklyStats.changes);
-            } catch (err) {
-                console.error("Error loading health data:", err);
-                setError("Không thể tải dữ liệu sức khỏe");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadHealthData();
     }, []);
+
+    const handleRefresh = async () => {
+        await loadHealthData();
+    };
 
     const renderHealthStats = () => {
         if (loading) {
@@ -131,13 +136,13 @@ const Profile = () => {
     };
 
     return (
-        <ScrollView>
+        <RefreshableScreen onRefreshCallback={handleRefresh}>
             <Text style={MyStyles.subject}>Chào {user.username}!</Text>
             {renderHealthStats()}
             {renderHealthChanges()}
 
             <Button onPress={logout} mode="contained" style={MyStyles.m}>Đăng xuất</Button>
-        </ScrollView>
+        </RefreshableScreen>
     );
 }
 

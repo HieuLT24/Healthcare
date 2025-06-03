@@ -5,6 +5,7 @@ import MyStyles from "../../styles/MyStyles";
 import { Button, Card, ActivityIndicator, SegmentedButtons, IconButton, Menu } from "react-native-paper";
 import { getLatestHealthStat, fetchHealthStats, saveHealthStat, updateHealthStat } from "../../utils/healthStatService";
 import moment from "moment";
+import RefreshableScreen from "../../components/RefreshableScreen";
 
 // Định nghĩa màu sắc chủ đạo cho app
 const AppColors = {
@@ -78,6 +79,10 @@ const Status = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRefresh = async () => {
+        await loadHealthData();
     };
 
     const handleUpdateHealth = async () => {
@@ -419,7 +424,7 @@ const Status = () => {
     };
 
     return (
-        <ScrollView style={{backgroundColor: '#ffffff'}}>
+        <RefreshableScreen onRefreshCallback={handleRefresh}>
             <Text style={[MyStyles.subject, {color: AppColors.primary, marginBottom: 12}]}>Thống kê sức khỏe</Text>
             
             {renderHealthStats()}
@@ -442,7 +447,7 @@ const Status = () => {
                     theme={{ colors: { primary: AppColors.primary, secondaryContainer: AppColors.secondary } }}
                 />
             </View>
-            
+
             <View style={{ marginHorizontal: 16, marginBottom: 16 }}>
                 <Menu
                     visible={dateMenuVisible}
@@ -472,7 +477,7 @@ const Status = () => {
                     ))}
                 </Menu>
             </View>
-        </ScrollView>
+        </RefreshableScreen>
     );
 };
 

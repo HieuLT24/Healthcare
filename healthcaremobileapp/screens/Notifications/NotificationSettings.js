@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { List, Switch, Text, Divider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import RefreshableScreen from '../../components/RefreshableScreen';
 
 const NotificationSettings = () => {
     const [settings, setSettings] = useState({
@@ -27,6 +28,10 @@ const NotificationSettings = () => {
         } catch (error) {
             console.error('Error loading settings:', error);
         }
+    };
+
+    const handleRefresh = async () => {
+        await loadSettings();
     };
 
     // Save settings to storage
@@ -54,7 +59,7 @@ const NotificationSettings = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <RefreshableScreen onRefreshCallback={handleRefresh} style={styles.container}>
             <List.Section>
                 <List.Subheader>Thông báo</List.Subheader>
                 
@@ -122,7 +127,7 @@ const NotificationSettings = () => {
                     )}
                 />
             </List.Section>
-        </ScrollView>
+        </RefreshableScreen>
     );
 };
 

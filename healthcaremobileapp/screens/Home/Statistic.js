@@ -4,6 +4,7 @@ import MyStyles from "../../styles/MyStyles"
 import { ActivityIndicator, ScrollView, View, Text } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Button, Card, useTheme, Menu, Divider } from "react-native-paper"
+import RefreshableScreen from "../../components/RefreshableScreen"
 
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -49,6 +50,10 @@ const Statistic = () => {
     useEffect(() => {
         loadStatistic(period, selectedDate)
     }, [period, selectedDate])
+
+    const handleRefresh = async () => {
+        await loadStatistic(period, selectedDate);
+    };
 
     const getDateOptions = () => {
         const today = moment();
@@ -267,7 +272,7 @@ const Statistic = () => {
     const weight_change = statistic?.weight_change || 0;
 
     return (
-        <ScrollView>
+        <RefreshableScreen onRefreshCallback={handleRefresh}>
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 16 }}>
                 <Button
                     mode={period === 'weekly' ? 'contained' : 'outlined'}
@@ -342,7 +347,6 @@ const Statistic = () => {
                         <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Số buổi tập:</Text>
                         <Text style={{ color: '#065f46', fontSize: 16 }}>{total_sessions}</Text>
                     </View>
-
                 </Card.Content>
             </Card>
 
@@ -420,9 +424,7 @@ const Statistic = () => {
                     }}
                 />
             </View>
-
-
-        </ScrollView>
+        </RefreshableScreen>
     );
 };
 
