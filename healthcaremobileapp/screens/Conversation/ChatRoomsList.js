@@ -17,7 +17,7 @@ import { Avatar, Appbar, Searchbar, Card } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 // Import Firebase services
 import { 
@@ -799,7 +799,7 @@ const ChatRoomsList = ({ route }) => {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar backgroundColor="#065f46" barStyle="light-content" />
-                <LinearGradient colors={['#065f46', '#047857']} style={styles.header}>
+                <View style={styles.header}>
                     {showExpertsList && (
                         <TouchableOpacity 
                             onPress={() => navigation.navigate('ChatRoomsList')}
@@ -816,7 +816,7 @@ const ChatRoomsList = ({ route }) => {
                             <Ionicons name="people" size={24} color="white" />
                         </TouchableOpacity>
                     )}
-                </LinearGradient>
+                </View>
                 
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#065f46" />
@@ -847,13 +847,13 @@ const ChatRoomsList = ({ route }) => {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar backgroundColor="#065f46" barStyle="light-content" />
-                <LinearGradient colors={['#065f46', '#047857']} style={styles.header}>
+                <View style={styles.header}>
                     <TouchableOpacity onPress={toggleExpertsView} style={styles.headerBackButton}>
                         <Ionicons name="arrow-back" size={24} color="white" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{listTitle}</Text>
                     <View style={styles.headerAction} />
-                </LinearGradient>
+                </View>
 
                 <View style={styles.searchContainer}>
                     <View style={styles.searchWrapper}>
@@ -903,12 +903,12 @@ const ChatRoomsList = ({ route }) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor="#065f46" barStyle="light-content" />
-            <LinearGradient colors={['#065f46', '#047857']} style={styles.header}>
+            <View style={styles.header}>
                 <Text style={styles.headerTitle}>Tin nhắn</Text>
                 <TouchableOpacity onPress={toggleExpertsView} style={styles.headerAction}>
                     <Ionicons name="people" size={24} color="white" />
                 </TouchableOpacity>
-            </LinearGradient>
+            </View>
 
             <FlatList
                 data={chatRooms}

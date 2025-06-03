@@ -19,7 +19,7 @@ import { Avatar } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 // Import Firebase services
 import { 
@@ -559,13 +559,10 @@ const FirebaseChatScreen = () => {
 
     if (loading) {
         return (
-            <LinearGradient 
-                colors={['#065f46', '#047857']}
-                style={styles.loadingContainer}
-            >
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="white" />
                 <Text style={styles.loadingText}>Đang tải cuộc trò chuyện...</Text>
-            </LinearGradient>
+            </View>
         );
     }
 
@@ -646,12 +643,9 @@ const FirebaseChatScreen = () => {
                         onPress={handleSendMessage}
                         disabled={!inputText.trim()}
                     >
-                        <LinearGradient
-                            colors={['#065f46', '#047857']}
-                            style={styles.sendButtonGradient}
-                        >
+                        <View style={styles.sendButtonGradient}>
                             <Ionicons name="send" size={20} color="white" />
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -668,6 +662,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#065f46',
     },
     loadingText: {
         marginTop: 10,
@@ -822,6 +817,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#065f46',
     },
     typingContainer: {
         paddingHorizontal: 16,
