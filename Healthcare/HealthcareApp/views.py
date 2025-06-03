@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 from allauth.headless.base.views import APIView
 from django.contrib.auth import get_user_model
@@ -13,13 +13,13 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from HealthcareApp import serializers
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
-    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem, HealthStat
+from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, NutritionGoal, \
+    NutritionPlan, Role, Meal, FoodItem, HealthStat
 from django.http import HttpResponse
 
 from collections import defaultdict
@@ -29,6 +29,9 @@ from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
     ExerciseSerializer, NutritionGoalSerializer, UserInforSerializer, MuscleGroupSerializer
+
+from django.db import models
+from drf_yasg import openapi
 
 
 # Create your views here.
@@ -109,6 +112,59 @@ class UserInforViewSet(viewsets.ViewSet, generics.UpdateAPIView):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách người dùng",
+        manual_parameters=[
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ]
+    )
+    def list(self, request):
+        """
+        Lấy danh sách tất cả người dùng có role là user
+        """
+        queryset = self.queryset
+
+        # Tìm kiếm theo tên
+        search = request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(username__icontains=search)
+            )
+
+        # Sắp xếp theo ngày tham gia
+        queryset = queryset.order_by('-date_joined')
+
+        serializer = self.serializer_class(queryset, many=True, context={'request': request})
+        return Response({
+            'count': queryset.count(),
+            'results': serializer.data
+        })
+
+    @swagger_auto_schema(
+        operation_description="Lấy thông tin chi tiết của một người dùng"
+    )
+    def retrieve(self, request, pk=None):
+        """
+        Lấy thông tin chi tiết của một người dùng
+        """
+        try:
+            user = User.objects.get(pk=pk, is_active=True)
+            serializer = self.serializer_class(user, context={'request': request})
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Không tìm thấy người dùng hoặc người dùng không'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
 class HealthStatViewSet(viewsets.ModelViewSet):
     serializer_class = HealthStatSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -168,47 +224,6 @@ class DiaryViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class ReminderViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.DestroyModelMixin,
-                      mixins.UpdateModelMixin,
-                      viewsets.GenericViewSet):
-
-    queryset = Reminder.objects.filter(is_active=True)
-    serializer_class = serializers.ReminderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Reminder.objects.filter(user = self.request.user, is_active=True)
-
-    def perform_update(self, serializer):
-        # Đảm bảo chỉ user sở hữu mới được update
-        instance = self.get_object()
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền sửa reminder này.")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        # Đảm bảo chỉ user sở hữu mới được xóa
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền xóa reminder này.")
-        instance.delete()
-
-
-
-class MessagesViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.filter(is_active=True)
-    serializer_class = serializers.MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.filter(is_active=True)
-    serializer_class = serializers.ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
 class NutritionGoalViewSet(viewsets.ModelViewSet):
     queryset = NutritionGoal.objects.filter(is_active=True)
     serializer_class = serializers.NutritionGoalSerializer
@@ -266,29 +281,32 @@ class PersonalStatisticView(RetrieveAPIView):
                     return Response({'error': 'Invalid week format. Use YYYY-Wnn'}, status=400)
             else:
                 # Default to current week if no week specified
-                start_date = today - timedelta(days=today.weekday())
-                end_date = start_date + timedelta(days=6)
+                start_date = today - timedelta(days=today.weekday())  # Thứ 2 của tuần hiện tại
+                end_date = min(start_date + timedelta(days=6), today)  # Chủ nhật hoặc hôm nay, tùy cái nào sớm hơn
                 
-            date_range = [start_date + timedelta(days=i) for i in range(7)]
+            date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
             
         elif period == 'monthly':
             month_param = request.query_params.get('month')
             
             if month_param:
                 try:
-                    
                     year, month = map(int, month_param.split('-'))
                     start_date = datetime(year, month, 1).date()
                     
                     _, last_day = calendar.monthrange(year, month)
                     end_date = datetime(year, month, last_day).date()
+
+                    # Nếu là tháng hiện tại, end_date là hôm nay
+                    if year == today.year and month == today.month:
+                        end_date = min(end_date, today)
                 except (ValueError, TypeError):
                     return Response({'error': 'Invalid month format. Use YYYY-MM'}, status=400)
             else:
-                
-                start_date = today.replace(day=1)
+                # Tháng hiện tại
+                start_date = today.replace(day=1)  # Ngày đầu tiên của tháng
                 _, last_day = calendar.monthrange(today.year, today.month)
-                end_date = today.replace(day=last_day)
+                end_date = min(today.replace(day=last_day), today)  # Ngày cuối cùng của tháng hoặc hôm nay
                 
             date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
             
@@ -299,17 +317,26 @@ class PersonalStatisticView(RetrieveAPIView):
                 try:
                     year = int(year_param)
                     start_date = datetime(year, 1, 1).date()
-                    end_date = datetime(year, 12, 31).date()
+
+                    if year == today.year:
+                        # Nếu là năm hiện tại, end_date là hôm nay
+                        end_date = today
+                    else:
+                        end_date = datetime(year, 12, 31).date()
                 except (ValueError, TypeError):
                     return Response({'error': 'Invalid year format. Use YYYY'}, status=400)
             else:
-                
+                # Năm hiện tại
                 start_date = datetime(today.year, 1, 1).date()
-                end_date = datetime(today.year, 12, 31).date()
+                end_date = today
                 
             # For yearly, we'll return monthly statistics
             date_range = []
+            year = start_date.year
             for month in range(1, 13):
+                # Chỉ tính đến tháng hiện tại nếu đang trong năm hiện tại
+                if year == today.year and month > today.month:
+                    break
                 date_range.append(datetime(year, month, 1).date())
         else:
             return Response({'error': 'Invalid period. Use weekly, monthly, or yearly'}, status=400)
@@ -466,3 +493,334 @@ class PersonalStatisticView(RetrieveAPIView):
             'health_summary': health_summary,
             'weight_change': weight_change
         })
+
+class HealthStatViewSet(viewsets.ModelViewSet):
+    serializer_class = HealthStatSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return HealthStat.objects.filter(user=self.request.user).order_by('-date')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Tính trung bìinhf giá trị
+        user_stats = HealthStat.objects.filter(user=self.request.user).order_by('-date').first()
+
+        # Nếu có bản ghi
+        if user_stats:
+            avg_water_intake = round(user_stats.water_intake, 2)
+            avg_step_count = int(user_stats.step_count)
+            avg_heart_rate = user_stats.heart_rate
+        else:
+            avg_water_intake = 0
+            avg_step_count = 0
+            avg_heart_rate = None
+
+        # Serialize the data
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+
+        for item in data:
+            item['water_intake'] = avg_water_intake
+            item['step_count'] = avg_step_count
+            item['heart_rate'] = avg_heart_rate
+
+        return Response(data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # Thay vì cập nhật vào bản ghi hiện tại, tạo bản ghi mới
+        new_data = {
+            'user': request.user.id,
+            'water_intake': request.data.get('water_intake', instance.water_intake),
+            'step_count': request.data.get('step_count', instance.step_count),
+            'heart_rate': request.data.get('heart_rate', instance.heart_rate),
+            'weight': request.data.get('weight', instance.weight),
+            'height': request.data.get('height', instance.height),
+        }
+
+        serializer = self.get_serializer(data=new_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='track-changes')
+    def track_changes(self, request):
+        """
+        Theo dõi sự thay đổi cân nặng, chiều cao theo thời gian (tuần, tháng, năm)
+        """
+        period = request.query_params.get('period', 'weekly')
+        today = now().date()
+
+        # Xác định khoảng thời gian dựa trên period
+        try:
+            period_data = self._get_period_dates(period, request, today)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=400)
+
+        start_date = period_data['start_date']
+        end_date = period_data['end_date']
+
+        # Lấy dữ liệu và tính toán thay đổi
+        result = self._calculate_changes_from_records(request.user, start_date, end_date)
+
+        # Tạo dữ liệu trả về
+        data = {
+            'period': period,
+            'start_date': start_date,
+            'end_date': end_date,
+            'first_record': result['first_record'],
+            'last_record': result['last_record'],
+            'changes': result['changes']
+        }
+
+        # Thêm trường year cho period yearly
+        if period == 'yearly' and 'year' in period_data:
+            data['year'] = period_data['year']
+
+        return Response(data)
+
+    def _get_period_dates(self, period, request, today):
+        """
+        Xác định ngày bắt đầu và kết thúc dựa trên period và tham số
+        """
+        if period == 'weekly':
+            week_param = request.query_params.get('week')
+            if week_param:
+                try:
+                    # Format: YYYY-Wnn
+                    year_str, week_str = week_param.split('-W')
+                    year = int(year_str)
+                    week = int(week_str)
+
+                    # Sử dụng thư viện ISO calendar để tính chính xác tuần
+                    # Tìm ngày đầu tiên (thứ Hai) của tuần
+                    # Đầu tiên, lấy một ngày bất kỳ trong tuần cần tìm
+                    jan4 = date(year, 1, 4)  # Ngày 4/1 luôn nằm trong tuần đầu tiên của năm theo ISO
+                    jan4_week = jan4.isocalendar()[1]  # Lấy số tuần của ngày 4/1
+
+                    # Tính số ngày cần thêm/bớt để đến tuần cần tìm
+                    days_delta = (week - jan4_week) * 7
+
+                    # Tìm một ngày trong tuần cần tìm
+                    sample_day = jan4 + timedelta(days=days_delta)
+
+                    # Tìm thứ Hai của tuần đó
+                    start_date = sample_day - timedelta(days=sample_day.weekday())
+                    end_date = start_date + timedelta(days=6)
+
+                    # Nếu là tuần hiện tại, end_date là hôm nay
+                    if start_date <= today <= end_date:
+                        end_date = today
+                except (ValueError, TypeError):
+                    raise ValueError('Invalid week format. Use YYYY-Wnn')
+            else:
+                # Default to current week if no week specified
+                start_date = today - timedelta(days=today.weekday())  # Thứ 2 của tuần hiện tại
+                end_date = min(start_date + timedelta(days=6), today)  # Chủ nhật hoặc hôm nay, tùy cái nào sớm hơn
+
+            return {
+                'start_date': start_date,
+                'end_date': end_date
+            }
+
+        elif period == 'monthly':
+            month_param = request.query_params.get('month')
+            if month_param:
+                try:
+                    year, month = map(int, month_param.split('-'))
+                    start_date = datetime(year, month, 1).date()
+
+                    _, last_day = calendar.monthrange(year, month)
+                    end_date = datetime(year, month, last_day).date()
+
+                    # Nếu là tháng hiện tại, end_date là hôm nay
+                    if year == today.year and month == today.month:
+                        end_date = min(end_date, today)
+                except (ValueError, TypeError):
+                    raise ValueError('Invalid month format. Use YYYY-MM')
+            else:
+                # Tháng hiện tại
+                start_date = today.replace(day=1)  # Ngày đầu tiên của tháng
+                _, last_day = calendar.monthrange(today.year, today.month)
+                end_date = min(today.replace(day=last_day), today)  # Ngày cuối cùng của tháng hoặc hôm nay
+
+            return {
+                'start_date': start_date,
+                'end_date': end_date
+            }
+
+        elif period == 'yearly':
+            year_param = request.query_params.get('year')
+            if year_param:
+                try:
+                    year = int(year_param)
+                    start_date = datetime(year, 1, 1).date()
+
+                    if year == today.year:
+                        # Nếu là năm hiện tại, end_date là hôm nay
+                        end_date = today
+                    else:
+                        end_date = datetime(year, 12, 31).date()
+                except (ValueError, TypeError):
+                    raise ValueError('Invalid year format. Use YYYY')
+            else:
+                # Năm hiện tại
+                year = today.year
+                start_date = datetime(year, 1, 1).date()
+                end_date = today
+
+            return {
+                'start_date': start_date,
+                'end_date': end_date,
+                'year': year
+            }
+        else:
+            raise ValueError('Invalid period. Use weekly, monthly, or yearly')
+
+    def _calculate_changes_from_records(self, user, start_date, end_date):
+        """
+        Lấy bản ghi đầu tiên và cuối cùng, tính toán thay đổi
+        """
+        # Lấy bản ghi đầu tiên - sắp xếp theo ngày tăng dần, lấy bản ghi sớm nhất
+        first_records = HealthStat.objects.filter(
+            user=user,
+            date__range=(start_date, end_date)
+        ).order_by('date')
+
+        first_record = None
+        if first_records.exists():
+            # Lấy ngày đầu tiên có bản ghi
+            first_date = first_records.first().date
+            # Lấy bản ghi đầu tiên của ngày đầu tiên
+            first_record = HealthStat.objects.filter(
+                user=user,
+                date=first_date
+            ).order_by('id').first()
+
+        # Lấy bản ghi cuối cùng - sắp xếp theo ngày giảm dần và ID giảm dần
+        # Để lấy bản ghi mới nhất (ID lớn nhất) của ngày mới nhất
+        last_record = HealthStat.objects.filter(
+            user=user,
+            date__range=(start_date, end_date)
+        ).order_by('-date', '-id').first()
+
+        # Tính sự thay đổi nếu có cả hai bản ghi
+        changes = {
+            'weight_change': None,
+            'height_change': None
+        }
+
+        if first_record and last_record and first_record.id != last_record.id:
+            if first_record.weight is not None and last_record.weight is not None:
+                changes['weight_change'] = round(last_record.weight - first_record.weight, 2)
+
+            if first_record.height is not None and last_record.height is not None:
+                changes['height_change'] = round(last_record.height - first_record.height, 2)
+
+        return {
+            'first_record': {
+                'date': first_record.date if first_record else None,
+                'weight': first_record.weight if first_record else None,
+                'height': first_record.height if first_record else None
+            } if first_record else None,
+            'last_record': {
+                'date': last_record.date if last_record else None,
+                'weight': last_record.weight if last_record else None,
+                'height': last_record.height if last_record else None,
+                'id': last_record.id if last_record else None  # Thêm ID để dễ debug
+            } if last_record else None,
+            'changes': changes
+        }
+
+class ExpertCoachListView(generics.ListAPIView):
+    """API lấy danh sách chuyên gia và huấn luyện viên"""
+    serializer_class = serializers.ExpertCoachSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Lấy danh sách user có role là EXPERT hoặc COACH
+        Có thể filter theo role thông qua query parameter
+        """
+        queryset = User.objects.filter(
+            is_active=True,
+            role__in=[Role.EXPERT.value, Role.COACH.value]
+        ).order_by('-date_joined')
+
+        # Filter theo role cụ thể nếu có
+        role_filter = self.request.query_params.get('role', None)
+        if role_filter and role_filter in [Role.EXPERT.value, Role.COACH.value]:
+            queryset = queryset.filter(role=role_filter)
+
+        # Tìm kiếm theo tên
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                models.Q(first_name__icontains=search) |
+                models.Q(last_name__icontains=search) |
+                models.Q(username__icontains=search)
+            )
+
+        return queryset
+
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách chuyên gia và huấn luyện viên",
+        manual_parameters=[
+            openapi.Parameter(
+                'role',
+                openapi.IN_QUERY,
+                description="Lọc theo role (expert hoặc coach)",
+                type=openapi.TYPE_STRING,
+                enum=[Role.EXPERT.value, Role.COACH.value]
+            ),
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Danh sách chuyên gia/huấn luyện viên",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'username': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'first_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'last_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'full_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'email': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'role': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar_url': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_of_birth': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                                    'health_goals': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_joined': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                                }
+                            )
+                        )
+                    }
+                )
+            )
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

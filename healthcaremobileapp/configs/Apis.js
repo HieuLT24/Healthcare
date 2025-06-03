@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios"
 
 export const BASE_URL = "http://192.168.100.179:8000";
 
@@ -19,6 +19,11 @@ export const endpoints = {
     'workout-detail': (id) => `/workout-sessions/${id}/`, // Lấy chi tiết lịch tập luyện
     'diaries': '/diaries/' // endpoint cho nhật ký
 };
+    'health-stats': 'healthstat/',
+    'health-stats-track-changes': 'healthstat/track-changes/',
+    'experts': 'api/experts-coaches',
+    'user-info': 'user-infor/'
+}
 
 export const authApi = (token) => {
     return axios.create({
@@ -26,9 +31,9 @@ export const authApi = (token) => {
         headers: {
             'Authorization': `Bearer ${token}`
         }
-    });
-};
+    })
+}
 
 export default axios.create({
     baseURL: BASE_URL
-});
+})

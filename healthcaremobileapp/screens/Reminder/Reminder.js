@@ -7,6 +7,7 @@ import moment from 'moment';
 import { TextInput, Menu, Button, Divider, Provider, Switch } from 'react-native-paper';
 import { TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RefreshableScreen from '../../components/RefreshableScreen';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -53,6 +54,7 @@ const Reminder = () => {
       }
     };
     requestPermission();
+    loadReminders(); // Load reminders on component mount
   }, []);
 
   const showTimePicker = () => setTimePickerVisibility(true);
@@ -209,26 +211,21 @@ const Reminder = () => {
     }
   }, [reminders]);
 
-  //  load reminders khi component mount
-  useEffect(() => {
-    const loadReminders = async () => {
-      try {
-        const savedReminders = await AsyncStorage.getItem('reminders');
-        if (savedReminders) {
-          const parsedReminders = JSON.parse(savedReminders);
-          // Chuyển đổi chuỗi thời gian thành Date object
-          const remindersWithDates = parsedReminders.map(reminder => ({
-            ...reminder,
-            time: new Date(reminder.time)
-          }));
-          setReminders(remindersWithDates);
-        }
-      } catch (error) {
-        console.error('Error loading reminders:', error);
+  const loadReminders = async () => {
+    try {
+      const storedReminders = await AsyncStorage.getItem('reminders');
+      if (storedReminders) {
+        const parsedReminders = JSON.parse(storedReminders);
+        setReminders(parsedReminders);
       }
-    };
-    loadReminders();
-  }, []);
+    } catch (error) {
+      console.error('Error loading reminders:', error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await loadReminders();
+  };
 
   const cancelReminder = async (reminderId) => {
     try {
@@ -259,94 +256,96 @@ const Reminder = () => {
   ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title} marginTop='0'>Đặt Nhắc nhở</Text>
+    <RefreshableScreen onRefreshCallback={handleRefresh}>
+      <View style={styles.container}>
+        <Text style={styles.title} marginTop='0'>Đặt Nhắc nhở</Text>
 
-      <Button 
-        mode="outlined" 
-        onPress={showTimePicker} 
-        style={[styles.button, selectedTime && styles.buttonSelected]}
-        labelStyle={selectedTime ? styles.buttonLabelSelected : styles.buttonLabel}
-      >
-        {formatTime(selectedTime)}
-      </Button>
-
-      <DateTimePickerModal
-        isVisible={isTimePickerVisible}
-        mode="time"
-        onConfirm={handleConfirm}
-        onCancel={hideTimePicker}
-        locale="vi"
-        is24Hour={true}
-        minimumDate={new Date()} // Không cho phép chọn thời gian trong quá khứ
-      />
-
-      <Menu
-        visible={visible}
-        onDismiss={closeMenu}
-        anchor={
-          <TouchableOpacity 
-            onPress={openMenu} 
-            style={[styles.menuButton, action && styles.menuButtonSelected]}
-          >
-            <Text style={[styles.menuButtonText, action && styles.menuButtonTextSelected]}>
-              {action ? `Đã chọn: ${action}` : 'Chọn loại nhắc nhở'}
-            </Text>
-          </TouchableOpacity>
-        }>
-        {reminderOptions.map((option) => (
-          <Menu.Item
-            key={option.value}
-            onPress={() => {
-              setAction(option.value);
-              closeMenu();
-            }}
-            title={option.label}
-          />
-        ))}
-      </Menu>
-
-      <View style={styles.buttonContainer}>
         <Button 
-          mode="contained" 
-          onPress={scheduleAlarmNotification}
-          style={[styles.scheduleButton, (!selectedTime || !action) && styles.buttonDisabled]}
-          disabled={!selectedTime || !action}
+          mode="outlined" 
+          onPress={showTimePicker} 
+          style={[styles.button, selectedTime && styles.buttonSelected]}
+          labelStyle={selectedTime ? styles.buttonLabelSelected : styles.buttonLabel}
         >
-          Đặt nhắc nhở
+          {formatTime(selectedTime)}
         </Button>
-      </View>
 
-      {reminders.length > 0 && (
-        <View style={styles.remindersList}>
-          <Text style={styles.remindersTitle}>Danh sách nhắc nhở</Text>
-          {reminders.map((reminder) => (
-            <View key={reminder.id} style={styles.reminderItem}>
-              <View style={styles.reminderInfo}>
-                <Text style={[
-                  styles.reminderText,
-                  !reminder.enabled && styles.reminderTextDisabled
-                ]}>
-                  {moment(reminder.time).format('HH:mm')} - {reminder.action}
-                </Text>
-                <Switch
-                  value={reminder.enabled}
-                  onValueChange={() => toggleReminder(reminder)}
-                  color="#065f46"
-                />
-              </View>
-              <Button
-                mode="text"
-                onPress={() => cancelReminder(reminder.id)}
-                style={styles.cancelButton}
-              >
-                Xóa
-              </Button>
-            </View>
+        <DateTimePickerModal
+          isVisible={isTimePickerVisible}
+          mode="time"
+          onConfirm={handleConfirm}
+          onCancel={hideTimePicker}
+          locale="vi"
+          is24Hour={true}
+          minimumDate={new Date()} // Không cho phép chọn thời gian trong quá khứ
+        />
+
+        <Menu
+          visible={visible}
+          onDismiss={closeMenu}
+          anchor={
+            <TouchableOpacity 
+              onPress={openMenu} 
+              style={[styles.menuButton, action && styles.menuButtonSelected]}
+            >
+              <Text style={[styles.menuButtonText, action && styles.menuButtonTextSelected]}>
+                {action ? `Đã chọn: ${action}` : 'Chọn loại nhắc nhở'}
+              </Text>
+            </TouchableOpacity>
+          }>
+          {reminderOptions.map((option) => (
+            <Menu.Item
+              key={option.value}
+              onPress={() => {
+                setAction(option.value);
+                closeMenu();
+              }}
+              title={option.label}
+            />
           ))}
+        </Menu>
+
+        <View style={styles.buttonContainer}>
+          <Button 
+            mode="contained" 
+            onPress={scheduleAlarmNotification}
+            style={[styles.scheduleButton, (!selectedTime || !action) && styles.buttonDisabled]}
+            disabled={!selectedTime || !action}
+          >
+            Đặt nhắc nhở
+          </Button>
         </View>
-      )}
-    </View>
+
+        {reminders.length > 0 && (
+          <View style={styles.remindersList}>
+            <Text style={styles.remindersTitle}>Danh sách nhắc nhở</Text>
+            {reminders.map((reminder) => (
+              <View key={reminder.id} style={styles.reminderItem}>
+                <View style={styles.reminderInfo}>
+                  <Text style={[
+                    styles.reminderText,
+                    !reminder.enabled && styles.reminderTextDisabled
+                  ]}>
+                    {moment(reminder.time).format('HH:mm')} - {reminder.action}
+                  </Text>
+                  <Switch
+                    value={reminder.enabled}
+                    onValueChange={() => toggleReminder(reminder)}
+                    color="#065f46"
+                  />
+                </View>
+                <Button
+                  mode="text"
+                  onPress={() => cancelReminder(reminder.id)}
+                  style={styles.cancelButton}
+                >
+                  Xóa
+                </Button>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </RefreshableScreen>
   );
 };
 

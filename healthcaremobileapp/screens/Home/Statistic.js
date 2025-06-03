@@ -4,12 +4,13 @@ import MyStyles from "../../styles/MyStyles"
 import { ActivityIndicator, ScrollView, View, Text } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Button, Card, useTheme, Menu, Divider } from "react-native-paper"
+import RefreshableScreen from "../../components/RefreshableScreen"
 
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import moment from 'moment';
 
-const Home = () => {
+const Statistic = () => {
     const [statistic, setStatistic] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -52,6 +53,9 @@ const Home = () => {
         loadStatistic(period, selectedDate)
     }, [period, selectedDate])
 
+    const handleRefresh = async () => {
+        await loadStatistic(period, selectedDate);
+    };
 
     const getDateOptions = () => {
         const today = moment();
@@ -270,7 +274,7 @@ const Home = () => {
     const weight_change = statistic?.weight_change || 0;
 
     return (
-        <ScrollView>
+        <RefreshableScreen onRefreshCallback={handleRefresh}>
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 16 }}>
                 <Button
                     mode={period === 'weekly' ? 'contained' : 'outlined'}
@@ -340,55 +344,11 @@ const Home = () => {
 
             {/* Thông tin tổng hợp */}
             <Card style={{ margin: 16, backgroundColor: '#f0fdf4' }}>
-                <Card.Title title="Thống Kê Tổng Hợp" titleStyle={{ color: '#065f46' }} />
                 <Card.Content>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                         <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Số buổi tập:</Text>
                         <Text style={{ color: '#065f46', fontSize: 16 }}>{total_sessions}</Text>
                     </View>
-
-                    {health_summary.avg_weight && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Cân nặng trung bình:</Text>
-                            <Text style={{ color: '#065f46', fontSize: 16 }}>{health_summary.avg_weight.toFixed(1)} kg</Text>
-                        </View>
-                    )}
-
-                    {health_summary.avg_bmi && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>BMI trung bình:</Text>
-                            <Text style={{ color: '#065f46', fontSize: 16 }}>{health_summary.avg_bmi.toFixed(1)}</Text>
-                        </View>
-                    )}
-
-                    {weight_change !== null && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Thay đổi cân nặng:</Text>
-                            <Text 
-                                style={{ 
-                                    fontSize: 16, 
-                                    color: weight_change > 0 ? '#ef4444' : weight_change < 0 ? '#10b981' : '#065f46',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                {weight_change > 0 ? '+' : ''}{weight_change.toFixed(1)} kg
-                            </Text>
-                        </View>
-                    )}
-
-                    {health_summary.avg_step_count && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Số bước trung bình:</Text>
-                            <Text style={{ color: '#065f46', fontSize: 16 }}>{Math.round(health_summary.avg_step_count)} bước</Text>
-                        </View>
-                    )}
-
-                    {health_summary.avg_heart_rate && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ color: '#065f46', fontWeight: 'bold' }}>Nhịp tim trung bình:</Text>
-                            <Text style={{ color: '#065f46', fontSize: 16 }}>{Math.round(health_summary.avg_heart_rate)} BPM</Text>
-                        </View>
-                    )}
                 </Card.Content>
             </Card>
 
@@ -466,211 +426,8 @@ const Home = () => {
                     }}
                 />
             </View>
-
-            {/* Thống kê sức khỏe */}
-            <View style={{ marginVertical: 16 }}>
-                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Cân nặng (kg)</Text>
-                {weight_data.some(val => val > 0) ? (
-                    <LineChart
-                        data={{
-                            labels: labels,
-                            datasets: [{ data: weight_data }]
-                        }}
-                        width={screenWidth - 24}
-                        height={220}
-                        chartConfig={healthChartConfig}
-                        bezier
-                        style={{ borderRadius: 12, marginHorizontal: 12 }}
-                        formatYLabel={(value) => value}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        renderDotContent={({ x, y, index, indexData }) => {
-                            if (indexData > 0) {
-                                return (
-                                    <Text
-                                        key={index}
-                                        style={{
-                                            position: 'absolute',
-                                            top: y - 24,
-                                            left: x - 15,
-                                            fontSize: 12,
-                                            color: '#3b82f6',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {indexData.toFixed(1)}
-                                    </Text>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
-                ) : (
-                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu cân nặng</Text>
-                )}
-
-                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Chỉ số BMI</Text>
-                {bmi_data.some(val => val > 0) ? (
-                    <LineChart
-                        data={{
-                            labels: labels,
-                            datasets: [{ data: bmi_data }]
-                        }}
-                        width={screenWidth - 24}
-                        height={220}
-                        chartConfig={healthChartConfig}
-                        bezier
-                        style={{ borderRadius: 12, marginHorizontal: 12 }}
-                        formatYLabel={(value) => value}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        renderDotContent={({ x, y, index, indexData }) => {
-                            if (indexData > 0) {
-                                return (
-                                    <Text
-                                        key={index}
-                                        style={{
-                                            position: 'absolute',
-                                            top: y - 24,
-                                            left: x - 15,
-                                            fontSize: 12,
-                                            color: '#3b82f6',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {indexData.toFixed(1)}
-                                    </Text>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
-                ) : (
-                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu BMI</Text>
-                )}
-
-                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Lượng nước (ml)</Text>
-                {water_intake_data.some(val => val > 0) ? (
-                    <LineChart
-                        data={{
-                            labels: labels,
-                            datasets: [{ data: water_intake_data }]
-                        }}
-                        width={screenWidth - 24}
-                        height={220}
-                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(6, 182, 212, ${opacity})`}}
-                        bezier
-                        style={{ borderRadius: 12, marginHorizontal: 12 }}
-                        formatYLabel={(value) => value}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        renderDotContent={({ x, y, index, indexData }) => {
-                            if (indexData > 0) {
-                                return (
-                                    <Text
-                                        key={index}
-                                        style={{
-                                            position: 'absolute',
-                                            top: y - 24,
-                                            left: x - 15,
-                                            fontSize: 12,
-                                            color: '#06b6d4',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {indexData}
-                                    </Text>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
-                ) : (
-                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu uống nước</Text>
-                )}
-
-                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Số bước chân</Text>
-                {step_count_data.some(val => val > 0) ? (
-                    <LineChart
-                        data={{
-                            labels: labels,
-                            datasets: [{ data: step_count_data }]
-                        }}
-                        width={screenWidth - 24}
-                        height={220}
-                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`}}
-                        bezier
-                        style={{ borderRadius: 12, marginHorizontal: 12 }}
-                        formatYLabel={(value) => value}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        renderDotContent={({ x, y, index, indexData }) => {
-                            if (indexData > 0) {
-                                return (
-                                    <Text
-                                        key={index}
-                                        style={{
-                                            position: 'absolute',
-                                            top: y - 24,
-                                            left: x - 15,
-                                            fontSize: 12,
-                                            color: '#8b5cf6',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {indexData.toFixed(0)}
-                                    </Text>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
-                ) : (
-                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu số bước chân</Text>
-                )}
-
-                <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Nhịp tim (BPM)</Text>
-                {heart_rate_data.some(val => val > 0) ? (
-                    <LineChart
-                        data={{
-                            labels: labels,
-                            datasets: [{ data: heart_rate_data }]
-                        }}
-                        width={screenWidth - 24}
-                        height={220}
-                        chartConfig={{...healthChartConfig, color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`}}
-                        bezier
-                        style={{ borderRadius: 12, marginHorizontal: 12 }}
-                        formatYLabel={(value) => value}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        renderDotContent={({ x, y, index, indexData }) => {
-                            if (indexData > 0) {
-                                return (
-                                    <Text
-                                        key={index}
-                                        style={{
-                                            position: 'absolute',
-                                            top: y - 24,
-                                            left: x - 15,
-                                            fontSize: 12,
-                                            color: '#ef4444',
-                                            fontWeight: 'bold',
-                                        }}
-                                    >
-                                        {indexData.toFixed(0)}
-                                    </Text>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
-                ) : (
-                    <Text style={{ textAlign: 'center', color: '#6b7280', marginTop: 10 }}>Chưa có dữ liệu nhịp tim</Text>
-                )}
-            </View>
-        </ScrollView>
+        </RefreshableScreen>
     );
 };
 
-export default Home;
+export default Statistic;

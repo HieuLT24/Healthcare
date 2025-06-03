@@ -1,7 +1,7 @@
 from . import views
 from django.urls import path, include
 from rest_framework import routers
-from .views import RegisterView, FacebookLoginView, GoogleLoginView, PersonalStatisticView, MuscleGroupViewSet
+from .views import RegisterView, FacebookLoginView, GoogleLoginView, PersonalStatisticView, MuscleGroupViewSet, ExpertCoachListView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -12,9 +12,6 @@ router.register('exercises', views.ExerciseViewSet,basename='exercises')
 router.register('muscle-groups', MuscleGroupViewSet, basename='muscle-group')
 router.register('workout-sessions', views.WorkoutSessionViewSet,basename='workout-sessions')
 router.register('diaries', views.DiaryViewSet,basename='diaries')
-router.register('reminders', views.ReminderViewSet,basename='reminders')
-router.register('messages', views.MessagesViewSet,basename='messages')
-router.register('conversations', views.ConversationViewSet,basename='conversations')
 router.register('nutrition-goals', views.NutritionGoalViewSet,basename='nutrition-goals')
 router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutrition-plapyns')
 router.register('meals', views.MealViewSet,basename='meals')
@@ -43,7 +40,8 @@ urlpatterns = [
     # Custom API
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/my-statistics/', PersonalStatisticView.as_view(), name='statistic'),
+    path('api/experts-coaches/', ExpertCoachListView.as_view(), name='experts-coaches'),
     # Social login
-    path('api/auth/facebook/', FacebookLoginView.as_view(), name='facebook_login'),
-    path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
+    # path('api/auth/facebook/', FacebookLoginView.as_view(), name='facebook_login'),
+    # path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
 ]

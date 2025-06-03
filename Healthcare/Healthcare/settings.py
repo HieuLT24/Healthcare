@@ -24,12 +24,11 @@ SECRET_KEY = 'django-insecure-cfu@qe^h618jfp*k&+1)+(p2i6p7*-y&ts%fc)-%7x%a)txbnb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '192.168.1.15', 'localhost']
 
 # Application definition
 
 INSTALLED_APPS = [
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sites',
@@ -56,7 +55,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.facebook',
-    'rest_framework_simplejwt.token_blacklist',
     'rest_framework.authtoken',
     'oauth2_provider',
 
@@ -110,7 +108,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://10.0.2.2:8000",  # Android emulator
     "exp://192.168.1.15:19000",
+    "http://localhost:19006",
+    "http://localhost:19000",
+    "http://localhost:19001",
+    "http://localhost:19002",
+    "http://localhost:3000",
+    "exp://localhost:19000",
 ]
+
+# Enable this in development to allow all origins
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
@@ -173,7 +180,6 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -181,14 +187,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-# SIMPLE_JWT = {
-#     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-#     "BLACKLIST_AFTER_ROTATION": True,
-#     "ROTATE_REFRESH_TOKENS": True,
-# }
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -255,4 +254,5 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # Tắt/bật đăng nhập bằng username/password
 }
 
-
+client_id_Hieu='XACNF8vlciv5XLCHD5mgR4fkOjl5FD9AR4axIeS3'
+client_secret_Hieu = 'IDgWxpeSwUo8wwZFZIQZx5z1wyphov496QCTvhWThaPaTGgK51FaC2JqcdDtUwCejlvuar4QUB77vlSlHP1dV5jSK4YOamS882lVRwHxwMtk9FIJK68JTvYZXtyPNwWt'

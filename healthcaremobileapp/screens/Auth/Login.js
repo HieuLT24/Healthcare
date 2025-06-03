@@ -87,7 +87,19 @@ const Login = () => {
 
                 let u = await authApi(res.data.access_token).get(endpoints['current-user']);
                 console.info(u.data);
-                await AsyncStorage.setItem('userId', u.data.id.toString());
+
+                // Lưu user ID vào AsyncStorage cho Firebase chat
+                if (u.data && u.data.id) {
+                    await AsyncStorage.setItem('currentUserId', u.data.id.toString());
+                    console.log("User ID saved to AsyncStorage:", u.data.id.toString());
+                }
+
+                // Lưu user data đầy đủ (bao gồm role) vào AsyncStorage
+                if (u.data) {
+                    await AsyncStorage.setItem('role', u.data.role.toString());
+                    console.log("role saved to AsyncStorage:", u.data.role.toString());
+                }
+
                 dispatch({
                     "type": "login",
                     "payload": u.data
