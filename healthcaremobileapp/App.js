@@ -12,12 +12,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import Login from './screens/Auth/Login';
 import Register from './screens/Auth/Register';
-import Profile from './screens/Profile/Profile';
+import Profile from './screens/Profile/Profile'; // Đã được sử dụng trong ProfileStack
 import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
 
 import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
+import ProfileStack from './screens/Profile/ProfileStack'; // Import ProfileStack để sử dụng trong AppDrawer
+import WorkoutList from './screens/Profile/WorkoutList';
+import CreateWorkout from './screens/Profile/CreateWorkout';
+import ExerciseStack from './screens/Profile/ExerciseStack';
+import WorkoutStack from './screens/Profile/WorkoutStack';
+import DiaryStack from './screens/Profile/DiaryStack';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -29,8 +35,12 @@ const AppDrawer = () => (
     <Drawer.Screen name="Workout" component={HomeTabs} />
     <Drawer.Screen name="Reminder" component={Reminder} />
     <Drawer.Screen name="Nutrition" component={HomeTabs} />
+    <Drawer.Screen name="Lịch tập luyện cá nhân" component={WorkoutStack} />
+    <Drawer.Screen name="Bài tập" component={ExerciseStack} />
+    <Drawer.Screen name="Nhật ký" component={DiaryStack} />
 
-    <Drawer.Screen name="Hồ sơ" component={Profile} />
+    {/* Thay Profile bằng ProfileStack để hỗ trợ UserInfoForm */}
+    <Drawer.Screen name="Hồ sơ" component={ProfileStack} />
   </Drawer.Navigator>
 );
 
@@ -73,15 +83,13 @@ const HomeTabs = () => (
     />
     <Tab.Screen
       name="Chỉ số cá nhân"
-      component={Profile}
+      component={ProfileStack} // Thay Profile bằng ProfileStack
       options={{
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
         )
       }}
     />
-
-
   </Tab.Navigator>
 );
 
@@ -118,4 +126,3 @@ const App = () => {
 }
 
 export default App;
-

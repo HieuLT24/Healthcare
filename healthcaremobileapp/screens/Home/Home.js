@@ -16,6 +16,8 @@ const Home = () => {
     const [period, setPeriod] = useState('weekly')
     const [selectedDate, setSelectedDate] = useState(moment())
     const [menuVisible, setMenuVisible] = useState(false)
+    const [healthStats, setHealthStats] = useState([]);
+    const [loadingHealth, setLoadingHealth] = useState(true);
 
     const loadStatistic = async (period, date) => {
         try {
@@ -49,6 +51,7 @@ const Home = () => {
     useEffect(() => {
         loadStatistic(period, selectedDate)
     }, [period, selectedDate])
+
 
     const getDateOptions = () => {
         const today = moment();

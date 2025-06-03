@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime
 
 from allauth.headless.base.views import APIView
+from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, Avg, Max, Min
 from rest_framework import (mixins, viewsets,
                             permissions, generics, parsers,
@@ -27,7 +28,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
-    ExerciseSerializer, NutritionGoalSerializer
+    ExerciseSerializer, NutritionGoalSerializer, UserInforSerializer, MuscleGroupSerializer
 
 
 # Create your views here.
@@ -87,16 +88,33 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
+class UserInforViewSet(viewsets.ViewSet, generics.UpdateAPIView):
     queryset = User.objects.filter(is_active=True)
-    serializer_class = serializers.UserInforSerializer
+    serializer_class = UserInforSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Chỉ cho phép người dùng hiện tại
+        return self.queryset.filter(id=self.request.user.id)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 class HealthStatViewSet(viewsets.ModelViewSet):
     serializer_class = HealthStatSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return HealthStat.objects.filter(user=self.request.user).order_by('-date')
+        return HealthStat.objects.filter(user=self.request.user).order_by('-date', '-id')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -104,7 +122,10 @@ class HealthStatViewSet(viewsets.ModelViewSet):
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.filter(is_active=True)
     serializer_class = ExerciseSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+    # Giới hạn các phương thức được hỗ trợ
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def get_queryset(self):
         user = self.request.user
@@ -118,15 +139,19 @@ class ExerciseViewSet(viewsets.ModelViewSet):
             is_active=True
         )
 
+class MuscleGroupViewSet(viewsets.ReadOnlyModelViewSet):  # chỉ GET
+    queryset = MuscleGroup.objects.filter(is_active=True)
+    serializer_class = MuscleGroupSerializer
 
-class WorkoutSessionReadViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+class WorkoutSessionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def get_queryset(self):
         return WorkoutSession.objects.filter(user=self.request.user, is_active=True)
 
     def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action == 'create':
             return WorkoutSessionWriteSerializer
         return WorkoutSessionReadSerializer
 

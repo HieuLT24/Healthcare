@@ -1,7 +1,8 @@
+from datetime import date
+
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, FloatField, CharField
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
     Reminder, Conversation, Message, NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
@@ -88,7 +89,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'avatar']
+        fields = ['id','username', 'password', 'first_name', 'last_name', 'avatar']
         extra_kwargs = {
             'username': {
                 "read_only": True
@@ -106,10 +107,33 @@ class UserSerializer(ModelSerializer):
 
         return u
 class UserInforSerializer(ModelSerializer):
+    age = FloatField(required=False)  # Tuổi
+    height = FloatField(required=False)  # Chiều cao (m)
+    weight = FloatField(required=False)  # Cân nặng (kg)
+    health_goals = CharField(required=False)  # Mục tiêu sức khỏe
+
     class Meta:
         model = User
-        fields = '__all__'
+        fields = [ 'age', 'height', 'weight', 'health_goals']
 
+    def update(self, instance, validated_data):
+        # Cập nhật thông tin cơ bản
+        instance.health_goals = validated_data.get('health_goals', instance.health_goals)
+        instance.height = validated_data.get('height', instance.height)
+        instance.weight = validated_data.get('weight', instance.weight)
+
+        # Cập nhật date_of_birth từ age
+        if 'age' in validated_data:
+            today = date.today()
+            age = validated_data['age']
+            year_of_birth = today.year - int(age)
+            month = today.month
+            day = today.day
+            instance.date_of_birth = date(year_of_birth, month, day)
+
+        # Lưu thông tin người dùng
+        instance.save()
+        return instance
 class HealthStatSerializer(ModelSerializer):
     class Meta:
         model = HealthStat

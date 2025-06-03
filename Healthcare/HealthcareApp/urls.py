@@ -1,7 +1,7 @@
 from . import views
 from django.urls import path, include
 from rest_framework import routers
-from .views import RegisterView, FacebookLoginView, GoogleLoginView, PersonalStatisticView
+from .views import RegisterView, FacebookLoginView, GoogleLoginView, PersonalStatisticView, MuscleGroupViewSet
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -9,7 +9,8 @@ from drf_yasg.views import get_schema_view
 router = routers.DefaultRouter()
 router.register('users', views.UserViewSet,basename='users')
 router.register('exercises', views.ExerciseViewSet,basename='exercises')
-router.register('workout-sessions', views.WorkoutSessionReadViewSet,basename='workout-sessions')
+router.register('muscle-groups', MuscleGroupViewSet, basename='muscle-group')
+router.register('workout-sessions', views.WorkoutSessionViewSet,basename='workout-sessions')
 router.register('diaries', views.DiaryViewSet,basename='diaries')
 router.register('reminders', views.ReminderViewSet,basename='reminders')
 router.register('messages', views.MessagesViewSet,basename='messages')
@@ -19,7 +20,7 @@ router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutritio
 router.register('meals', views.MealViewSet,basename='meals')
 router.register('food-items', views.FoodItemViewSet,basename='food-items')
 router.register('user-infor', views.UserInforViewSet,basename='user-infor')
-router.register('healthstat', views.HealthStatViewSet,basename='heathstat')
+router.register('health-stats', views.HealthStatViewSet,basename='heathstat')
 
 
 schema_view = get_schema_view(
