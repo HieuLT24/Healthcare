@@ -18,9 +18,6 @@ def run():
     Exercise.objects.all().delete()
     WorkoutSession.objects.all().delete()
     Diary.objects.all().delete()
-    Reminder.objects.all().delete()
-    Conversation.objects.all().delete()
-    Message.objects.all().delete()
     FoodItem.objects.all().delete()
     Meal.objects.all().delete()
     NutritionGoal.objects.all().delete()
@@ -88,39 +85,6 @@ def run():
             content=fake.text(),
             user=random.choice(users),
             workout_session=random.choice(sessions)
-        )
-
-    # 6. Reminder
-    types = [t.value for t in ReminderType]
-    for _ in range(10):
-        Reminder.objects.create(
-            name=f"Reminder {_ + 1}",
-            description=fake.sentence(),
-            time=datetime.now() + timedelta(hours=random.randint(1, 48)),
-            repeat=bool(random.getrandbits(1)),
-            reminder_type=random.choice(types),
-            user=random.choice(users)
-        )
-
-    # 7. Conversation
-    conversations = []
-    for i in range(5):
-        u1, u2 = random.sample(users, 2)
-        if u1.id < u2.id:
-            conv = Conversation.objects.create(name=f"Conversation {u1.id}-{u2.id}", sender_1=u1, sender_2=u2)
-            conversations.append(conv)
-
-    # 8. Message
-    for _ in range(10):
-        conv = random.choice(conversations)
-        sender = conv.sender_1
-        receiver = conv.sender_2
-        Message.objects.create(
-            name="Message",
-            conversation=conv,
-            content=fake.sentence(),
-            sender=sender,
-            receiver=receiver
         )
 
     # 9. FoodItems

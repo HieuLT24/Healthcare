@@ -8,7 +8,6 @@ import MyUserReducer from './reducers/MyUserReducers';
 import React from 'react';
 
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import Login from './screens/Auth/Login';
 import Register from './screens/Auth/Register';
@@ -17,8 +16,11 @@ import Statistic from './screens/Home/Statistic';
 import Status from './screens/Home/Status';
 import Reminder from './screens/Reminder/Reminder';
 
+
 import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
+import ChatRoomsList from './screens/Conversation/ChatRoomsList';
+import FirebaseChatScreen from './screens/Conversation/FirebaseChatScreen';
 
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
@@ -30,8 +32,8 @@ const AppDrawer = () => (
     <Drawer.Screen name="Workout" component={HomeTabs} />
     <Drawer.Screen name="Reminder" component={Reminder} />
     <Drawer.Screen name="Nutrition" component={HomeTabs} />
-
     <Drawer.Screen name="Hồ sơ" component={Profile} />
+    <Drawer.Screen name="Tư vấn trực tuyến" component={ConversationTabs} />
   </Drawer.Navigator>
 );
 
@@ -83,6 +85,29 @@ const HomeTabs = () => (
     />
 
 
+  </Tab.Navigator>
+);
+
+const ConversationStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="ChatRoomsList" component={ChatRoomsList} />
+    <Stack.Screen name="FirebaseChatScreen" component={FirebaseChatScreen} />
+  </Stack.Navigator>
+);
+
+const ConversationTabs = () => (
+  <Tab.Navigator>
+    <Tab.Screen 
+      name="Danh sách tin nhắn" 
+      component={ConversationStack}
+      options={{
+        tabBarShowLabel: false,
+        headerShown: false,
+        tabBarIcon: ({ color, size }) => (
+          <MaterialCommunityIcons name="chat" size={size} color={color} />
+        )
+      }}
+    />
   </Tab.Navigator>
 );
 

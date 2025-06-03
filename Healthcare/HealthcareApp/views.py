@@ -12,13 +12,13 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from HealthcareApp import serializers
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
-from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, Reminder, Message, Conversation, NutritionGoal, \
-    NutritionPlan, MuscleGroup, ReminderType, HealthGoals, Role, Meal, FoodItem, HealthStat
+from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, NutritionGoal, \
+    NutritionPlan, Role, Meal, FoodItem, HealthStat
 from django.http import HttpResponse
 
 from collections import defaultdict
@@ -27,7 +27,10 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
-    ExerciseSerializer, NutritionGoalSerializer
+    ExerciseSerializer
+
+from django.db import models
+from drf_yasg import openapi
 
 
 # Create your views here.
@@ -87,10 +90,62 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-class UserInforViewSet(viewsets.ViewSet,generics.UpdateAPIView):
+class UserInforViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserInforSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách người dùng",
+        manual_parameters=[
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ]
+    )
+    def list(self, request):
+        """
+        Lấy danh sách tất cả người dùng có role là user
+        """
+        queryset = self.queryset
+        
+        # Tìm kiếm theo tên
+        search = request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(username__icontains=search)
+            )
+        
+        # Sắp xếp theo ngày tham gia
+        queryset = queryset.order_by('-date_joined')
+        
+        serializer = self.serializer_class(queryset, many=True, context={'request': request})
+        return Response({
+            'count': queryset.count(),
+            'results': serializer.data
+        })
+
+    @swagger_auto_schema(
+        operation_description="Lấy thông tin chi tiết của một người dùng"
+    )
+    def retrieve(self, request, pk=None):
+        """
+        Lấy thông tin chi tiết của một người dùng
+        """
+        try:
+            user = User.objects.get(pk=pk, is_active=True)
+            serializer = self.serializer_class(user, context={'request': request})
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Không tìm thấy người dùng hoặc người dùng không'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class ExerciseViewSet(viewsets.ModelViewSet):
@@ -133,47 +188,6 @@ class DiaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-class ReminderViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.DestroyModelMixin,
-                      mixins.UpdateModelMixin,
-                      viewsets.GenericViewSet):
-
-    queryset = Reminder.objects.filter(is_active=True)
-    serializer_class = serializers.ReminderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Reminder.objects.filter(user = self.request.user, is_active=True)
-
-    def perform_update(self, serializer):
-        # Đảm bảo chỉ user sở hữu mới được update
-        instance = self.get_object()
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền sửa reminder này.")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        # Đảm bảo chỉ user sở hữu mới được xóa
-        if instance.user != self.request.user:
-            raise PermissionDenied("Bạn không có quyền xóa reminder này.")
-        instance.delete()
-
-
-
-class MessagesViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.filter(is_active=True)
-    serializer_class = serializers.MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.filter(is_active=True)
-    serializer_class = serializers.ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
 class NutritionGoalViewSet(viewsets.ModelViewSet):
@@ -691,3 +705,88 @@ class HealthStatViewSet(viewsets.ModelViewSet):
             } if last_record else None,
             'changes': changes
         }
+
+class ExpertCoachListView(generics.ListAPIView):
+    """API lấy danh sách chuyên gia và huấn luyện viên"""
+    serializer_class = serializers.ExpertCoachSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Lấy danh sách user có role là EXPERT hoặc COACH
+        Có thể filter theo role thông qua query parameter
+        """
+        queryset = User.objects.filter(
+            is_active=True,
+            role__in=[Role.EXPERT.value, Role.COACH.value]
+        ).order_by('-date_joined')
+        
+        # Filter theo role cụ thể nếu có
+        role_filter = self.request.query_params.get('role', None)
+        if role_filter and role_filter in [Role.EXPERT.value, Role.COACH.value]:
+            queryset = queryset.filter(role=role_filter)
+            
+        # Tìm kiếm theo tên
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                models.Q(first_name__icontains=search) |
+                models.Q(last_name__icontains=search) |
+                models.Q(username__icontains=search)
+            )
+            
+        return queryset
+    
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách chuyên gia và huấn luyện viên",
+        manual_parameters=[
+            openapi.Parameter(
+                'role',
+                openapi.IN_QUERY,
+                description="Lọc theo role (expert hoặc coach)",
+                type=openapi.TYPE_STRING,
+                enum=[Role.EXPERT.value, Role.COACH.value]
+            ),
+            openapi.Parameter(
+                'search',
+                openapi.IN_QUERY,
+                description="Tìm kiếm theo tên (first_name, last_name, username)",
+                type=openapi.TYPE_STRING
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Danh sách chuyên gia/huấn luyện viên",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, nullable=True),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    'username': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'first_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'last_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'full_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'email': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'role': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'avatar_url': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_of_birth': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                                    'health_goals': openapi.Schema(type=openapi.TYPE_STRING),
+                                    'date_joined': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                                }
+                            )
+                        )
+                    }
+                )
+            )
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

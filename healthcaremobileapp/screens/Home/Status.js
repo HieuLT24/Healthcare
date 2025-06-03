@@ -181,6 +181,19 @@ const Status = () => {
         }
     };
 
+    const formatDate = (dateString) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            return dateString;
+        }
+    };
+
     const renderHealthStats = () => {
         if (loading && !healthStat) {
             return <ActivityIndicator size="small" color={AppColors.primary} />;
@@ -212,7 +225,7 @@ const Status = () => {
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                         <Text style={{color: AppColors.text}}>Ngày cập nhật:</Text>
-                        <Text style={{color: AppColors.text, fontWeight: 'bold'}}>{healthStat.date}</Text>
+                        <Text style={{color: AppColors.text, fontWeight: 'bold'}}>{formatDate(healthStat.date)}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                         <Text style={{color: AppColors.text}}>Cân nặng hiện tại:</Text>
