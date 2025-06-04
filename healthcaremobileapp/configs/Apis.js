@@ -17,13 +17,11 @@ export const endpoints = {
     'exercise-detail': (id) => `/exercises/${id}/`, // Lấy chi tiết bài tập
     'workouts': '/workout-sessions/', // Lấy danh sách hoặc tạo mới lịch tập luyện
     'workout-detail': (id) => `/workout-sessions/${id}/`, // Lấy chi tiết lịch tập luyện
-    'diaries': '/diaries/' // endpoint cho nhật ký
-};
-    'health-stats': 'healthstat/',
+    'diaries': '/diaries/', // endpoint cho nhật ký
+    'health-stats': 'health-stats/',
     'health-stats-track-changes': 'healthstat/track-changes/',
     'experts': 'api/experts-coaches',
-    'user-info': 'user-infor/'
-}
+};
 
 export const authApi = (token) => {
     return axios.create({

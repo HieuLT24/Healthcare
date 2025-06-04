@@ -143,7 +143,7 @@ class UserInforSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = [ 'id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role','age', 'height', 'weight', 'health_goals']
+        fields = [ 'age', 'height', 'weight', 'health_goals']
 
     def update(self, instance, validated_data):
         # Cập nhật thông tin cơ bản
@@ -168,7 +168,13 @@ class HealthStatSerializer(ModelSerializer):
         model = HealthStat
         fields ='__all__'
 
+class MuscleGroupSerializer(ModelSerializer):
+    class Meta:
+        model = MuscleGroup
+        fields =['id','name']
+
 class ExerciseSerializer(ModelSerializer):
+    muscle_groups = MuscleGroupSerializer(many=True, read_only=True)  # Sử dụng serializer cho muscle_groups
     class Meta:
         model = Exercise
         fields = ['id','is_active','name','description',
@@ -207,11 +213,6 @@ class DiarySerializer(ModelSerializer):
         fields =['id','is_active','name','content','workout_session' ]
         read_only_fields = ['user']
 
-
-class MuscleGroupSerializer(ModelSerializer):
-    class Meta:
-        model = MuscleGroup
-        fields =['id','name']
 
 class NutritionGoalSerializer(ModelSerializer):
     class Meta:

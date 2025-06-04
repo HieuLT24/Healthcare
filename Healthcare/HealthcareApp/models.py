@@ -34,6 +34,7 @@ class BaseModel(models.Model):
 
 class User(AbstractUser):
     avatar = CloudinaryField(null=True, blank=True, folder='user_avatar')
+    role = models.CharField(max_length=50, choices=[(role.name, role.value) for role in Role], default=Role.USER.value)
     date_of_birth = models.DateField(null=True, blank=True)  # Ngày sinh
     height = models.FloatField(null=True, blank=True)  # Chiều cao cơ bản (m)
     weight = models.FloatField(null=True, blank=True)  # Cân nặng cơ bản (kg)
@@ -54,11 +55,10 @@ class HealthStat(models.Model):
         # Tính toán BMI
         if self.height and self.weight:
             try:
-                self.bmi = self.weight / ((self.height*0.01) ** 2)
+                self.bmi = round(self.weight / (self.height ** 2), 2)  # Làm tròn đến 2 số thập phân
             except ZeroDivisionError:
                 self.bmi = None
         super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.user.username} - {self.date}"
 

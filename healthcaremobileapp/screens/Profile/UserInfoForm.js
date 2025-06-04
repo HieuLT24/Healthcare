@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, Alert } from "react-native";
+import { ScrollView, TextInput, StyleSheet, Alert } from "react-native";
 import { Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,7 +12,7 @@ const UserInfoForm = () => {
     const [weight, setWeight] = useState("");
     const [age, setAge] = useState("");
     const [healthGoals, setHealthGoals] = useState("");
-    const [loading, setLoading] = useState(false); // Trạng thái tải dữ liệu
+    const [loading, setLoading] = useState(false);
     const [waterIntake, setWaterIntake] = useState("");
     const [stepCount, setStepCount] = useState("");
     const [heartRate, setHeartRate] = useState("");
@@ -42,9 +42,11 @@ const UserInfoForm = () => {
             const data = {
                 height: parseFloat(height),
                 weight: parseFloat(weight),
-                age,
                 health_goals: healthGoals,
             };
+            if (age && !isNaN(Number(age))) {
+                data.age = Number(age);
+            }
 
             // Cập nhật thông tin User
             const api = authApi(token);
@@ -79,15 +81,15 @@ const UserInfoForm = () => {
             Alert.alert("Thành công", "Thông tin đã được cập nhật!");
             navigation.goBack();
         } catch (error) {
-            // Hiển thị lỗi chi tiết từ backend nếu có
             console.error("Lỗi khi cập nhật thông tin cá nhân:", error?.response?.data || error);
             Alert.alert("Lỗi", "Không thể cập nhật thông tin cá nhân.");
         } finally {
             setLoading(false);
         }
     };
+
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
             <TextInput
                 style={styles.input}
                 placeholder="Chiều cao (m)"
@@ -140,19 +142,19 @@ const UserInfoForm = () => {
                 mode="contained"
                 style={styles.button}
                 onPress={handleSave}
-                loading={loading} // Hiển thị trạng thái loading
-                disabled={loading} // Vô hiệu hóa khi đang tải
+                loading={loading}
+                disabled={loading}
             >
                 Lưu
             </Button>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         padding: 20,
+        paddingBottom: 40,
     },
     input: {
         height: 40,
@@ -160,10 +162,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginBottom: 10,
         paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: "#fff"
     },
     button: {
         marginTop: 15,
         width: "100%",
+        borderRadius: 8,
     },
 });
 

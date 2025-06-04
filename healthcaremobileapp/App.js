@@ -8,21 +8,21 @@ import MyUserReducer from './reducers/MyUserReducers';
 import React from 'react';
 
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import Login from './screens/Auth/Login';
 import Register from './screens/Auth/Register';
-import Profile from './screens/Profile/Profile';
+// import Profile from './screens/Profile/Profile';
 import Statistic from './screens/Home/Statistic';
-import Status from './screens/Home/Status';
-import Home from './screens/Home/Home';
+// import Status from './screens/Home/Status';
+// import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
 
-import RefreshableScreen from './components/RefreshableScreen';
+// import RefreshableScreen from './components/RefreshableScreen';
 import { PaperProvider } from 'react-native-paper';
-import ProfileStack from './screens/Profile/ProfileStack'; // Import ProfileStack để sử dụng trong AppDrawer
-import WorkoutList from './screens/Profile/WorkoutList';
-import CreateWorkout from './screens/Profile/CreateWorkout';
+import ProfileStack from './screens/Profile/ProfileStack'; 
+// import WorkoutList from './screens/Profile/WorkoutList';
+// import CreateWorkout from './screens/Profile/CreateWorkout';
 import ExerciseStack from './screens/Profile/ExerciseStack';
 import WorkoutStack from './screens/Profile/WorkoutStack';
 import DiaryStack from './screens/Profile/DiaryStack';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, FlatList, StyleSheet, Alert, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, FlatList, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Apis, { endpoints } from "../../configs/Apis";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -66,15 +66,24 @@ const ExerciseList = () => {
   };
 
   const handleSelectExercise = (exercise) => {
-    navigation.navigate('CreateWorkout', { selectedExercise: exercise });
+    navigation.navigate('ExerciseDetail', { exerciseId: exercise.id });
   };
 
   const handleAddExercise = () => {
     navigation.navigate('CreateExercise');
   };
 
+  // Hàm lấy tên nhóm cơ (nếu là object có name thì lấy name, nếu là id thì hiển thị id)
+  const getMuscleGroupsDisplay = (muscle_groups) => {
+    if (!muscle_groups || muscle_groups.length === 0) return "";
+    if (typeof muscle_groups[0] === "object" && muscle_groups[0].name) {
+      return muscle_groups.map(mg => mg.name).join(", ");
+    }
+    return muscle_groups.join(", ");
+  };
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
+    <View style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
       <View style={styles.headerRow}>
         <Text style={styles.header}>Danh sách bài tập</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddExercise}>
@@ -114,7 +123,7 @@ const ExerciseList = () => {
                 <View style={styles.row}>
                   {item.duration && <Text style={styles.cardInfo}>⏱ {item.duration} phút</Text>}
                   {item.muscle_groups && item.muscle_groups.length > 0 && (
-                    <Text style={styles.cardInfo}>🏷 {item.muscle_groups.join(", ")}</Text>
+                    <Text style={styles.cardInfo}>🏷 {getMuscleGroupsDisplay(item.muscle_groups)}</Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -122,11 +131,10 @@ const ExerciseList = () => {
           )}
           refreshing={refreshing}
           onRefresh={onRefresh}
-          nestedScrollEnabled={true}
           ListEmptyComponent={<Text style={styles.empty}>Không có bài tập nào.</Text>}
         />
       )}
-    </ScrollView>
+    </View>
   );
 };
 
