@@ -151,7 +151,7 @@ const FirebaseChatScreen = () => {
                 try {
                     const token = await AsyncStorage.getItem('token');
                     if (token) {
-                        const res = await authApi(token).get(`${endpoints['user-info']}${otherUserId}/`);
+                        const res = await authApi(token).get(`${endpoints['hieu-user-infor']}${otherUserId}/`);
                         if (res.data) {
                             // console.log('✅ Loaded otherUserInfo from API:', res.data);
                             // Set navigation params với otherUserInfo đã load

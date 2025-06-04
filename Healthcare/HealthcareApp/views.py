@@ -90,9 +90,9 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
-class UserInforViewSet(viewsets.ViewSet):
+class HieuUserInforViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
-    serializer_class = serializers.UserInforSerializer
+    serializer_class = serializers.HieuUserInforSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
@@ -531,8 +531,8 @@ class PersonalStatisticView(RetrieveAPIView):
             'weight_change': weight_change
         })
 
-class HealthStatViewSet(viewsets.ModelViewSet):
-    serializer_class = HealthStatSerializer
+class HealthStatisticViewSet(viewsets.ModelViewSet):
+    serializer_class = serializers.HealthStatisticSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_target_user(self, request):

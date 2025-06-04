@@ -177,7 +177,7 @@ const ChatRoomsList = ({ route }) => {
             // console.log('🔗 Full URL:', `${BASE_URL}/${endpoints['user-info']}`);
             
             // Sử dụng endpoint users hoặc tương tự để lấy danh sách user
-            const res = await authApi(token).get(endpoints['user-info']);
+            const res = await authApi(token).get(endpoints['hieu-user-infor']);
             // console.log('✅ Users API response:', res.data);
             // console.log('📊 Response type:', typeof res.data);
             // console.log('📊 Is array:', Array.isArray(res.data));
@@ -312,7 +312,7 @@ const ChatRoomsList = ({ route }) => {
                                 try {
                                     const token = await AsyncStorage.getItem('token');
                                     // console.log('🔄 Token:', token);
-                                    const res = await authApi(token).get(`${endpoints['user-info']}${otherUserId}/`);
+                                    const res = await authApi(token).get(`${endpoints['hieu-user-infor']}${otherUserId}/`);
                                     if (res.data) {
                                         otherUserInfo = res.data;
                                     }

@@ -94,7 +94,7 @@ export const saveHealthStat = async (healthData) => {
       date: healthData.date || new Date().toISOString().split('T')[0]
     };
 
-    const url = endpoints['health-stats'];
+    const url = endpoints['health-statistic'];
     console.log('Saving health stats with data:', payload);
     
     const response = await authApi(token).post(url, payload);
@@ -122,7 +122,7 @@ export const updateHealthStat = async (id, healthData) => {
       throw new Error('ID không hợp lệ');
     }
 
-    const url = `${endpoints['health-stats']}${id}/`;
+    const url = `${endpoints['health-statistic']}${id}/`;
     console.log(`Updating health stat ${id} with:`, healthData);
     
     const response = await authApi(token).patch(url, healthData);
@@ -144,7 +144,7 @@ export const getLatestHealthStat = async () => {
       throw new Error('Chưa đăng nhập');
     }
 
-    const url = endpoints['health-stats'];
+    const url = endpoints['health-statistic'];
     const response = await authApi(token).get(url);
     console.log('Latest health stat response x:', response.data);
     

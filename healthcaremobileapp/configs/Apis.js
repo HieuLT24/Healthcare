@@ -10,10 +10,10 @@ export const endpoints = {
     'reminders': 'reminders/',
     'my-statistics': 'api/my-statistics/',
     'current-user': `users/current-user/`,
-    'health-stats': 'healthstat/',
+    'health-statistic': 'health-statistic/',
     'health-stats-track-changes': 'healthstat/track-changes/',
     'experts': 'api/experts-coaches',
-    'user-info': 'user-infor/'
+    'hieu-user-infor': 'hieu-user-infor/'
 }
 
 export const authApi = (token) => {

@@ -15,8 +15,8 @@ router.register('nutrition-goals', views.NutritionGoalViewSet,basename='nutritio
 router.register('nutrition-plans', views.NutritionPLanViewSet,basename='nutrition-plapyns')
 router.register('meals', views.MealViewSet,basename='meals')
 router.register('food-items', views.FoodItemViewSet,basename='food-items')
-router.register('user-infor', views.UserInforViewSet,basename='user-infor')
-router.register('healthstat', views.HealthStatViewSet,basename='heathstat')
+router.register('hieu-user-infor', views.HieuUserInforViewSet,basename='hieu-user-infor')
+router.register('health-statistic', views.HealthStatisticViewSet,basename='health-statistic')
 
 
 schema_view = get_schema_view(

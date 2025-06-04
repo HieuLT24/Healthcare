@@ -134,12 +134,12 @@ class UserSerializer(ModelSerializer):
         u.save()
 
         return u
-class UserInforSerializer(ModelSerializer):
+class HieuUserInforSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role']
 
-class HealthStatSerializer(ModelSerializer):
+class HealthStatisticSerializer(ModelSerializer):
     class Meta:
         model = HealthStat
         fields ='__all__'
