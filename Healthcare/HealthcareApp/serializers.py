@@ -1,7 +1,8 @@
+from datetime import date
+
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, FloatField, CharField
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
      NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
@@ -36,13 +37,13 @@ class RegisterSerializer(ModelSerializer):
         try:
             validated_data.pop('password2')
             avatar = validated_data.pop('avatar', None)
-            
+
             user = User.objects.create_user(**validated_data)
-            
+
             if avatar:
                 user.avatar = avatar
                 user.save()
-                
+
             return user
         except Exception as e:
             raise ValidationError({"error": f"Lỗi khi tạo tài khoản: {str(e)}"})
@@ -135,21 +136,45 @@ class UserSerializer(ModelSerializer):
 
         return u
 class UserInforSerializer(ModelSerializer):
+    age = FloatField(required=False)  # Tuổi
+    height = FloatField(required=False)  # Chiều cao (m)
+    weight = FloatField(required=False)  # Cân nặng (kg)
+    health_goals = CharField(required=False)  # Mục tiêu sức khỏe
+
     class Meta:
         model = User
-        fields = ['id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role']
+        fields = [ 'age', 'height', 'weight', 'health_goals']
 
+    def update(self, instance, validated_data):
+        # Cập nhật thông tin cơ bản
+        instance.health_goals = validated_data.get('health_goals', instance.health_goals)
+        instance.height = validated_data.get('height', instance.height)
+        instance.weight = validated_data.get('weight', instance.weight)
+
+        # Cập nhật date_of_birth từ age
+        if 'age' in validated_data:
+            today = date.today()
+            age = validated_data['age']
+            year_of_birth = today.year - int(age)
+            month = today.month
+            day = today.day
+            instance.date_of_birth = date(year_of_birth, month, day)
+
+        # Lưu thông tin người dùng
+        instance.save()
+        return instance
 class HealthStatSerializer(ModelSerializer):
     class Meta:
         model = HealthStat
         fields ='__all__'
-        extra_kwargs = {
-            'bmi': {
-                "read_only": True
-            }
-        }
+
+class MuscleGroupSerializer(ModelSerializer):
+    class Meta:
+        model = MuscleGroup
+        fields =['id','name']
 
 class ExerciseSerializer(ModelSerializer):
+    muscle_groups = MuscleGroupSerializer(many=True, read_only=True)  # Sử dụng serializer cho muscle_groups
     class Meta:
         model = Exercise
         fields = ['id','is_active','name','description',
@@ -189,11 +214,6 @@ class DiarySerializer(ModelSerializer):
         read_only_fields = ['user']
 
 
-class MuscleGroupSerializer(ModelSerializer):
-    class Meta:
-        model = MuscleGroup
-        fields =['id','name']
-
 class NutritionGoalSerializer(ModelSerializer):
     class Meta:
         model = NutritionGoal
@@ -222,19 +242,19 @@ class ExpertCoachSerializer(ModelSerializer):
     """Serializer cho danh sách chuyên gia và huấn luyện viên"""
     full_name = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 
-                 'email', 'role', 'avatar', 'avatar_url', 'date_of_birth', 
+        fields = ['id', 'username', 'first_name', 'last_name', 'full_name',
+                 'email', 'role', 'avatar', 'avatar_url', 'date_of_birth',
                  'health_goals', 'date_joined']
-        
+
     def get_full_name(self, obj):
         """Trả về tên đầy đủ"""
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
         return obj.username
-        
+
     def get_avatar_url(self, obj):
         """Trả về URL avatar đầy đủ"""
         if obj.avatar:
@@ -242,36 +262,36 @@ class ExpertCoachSerializer(ModelSerializer):
                 # Xử lý CloudinaryField đặc biệt
                 if hasattr(obj.avatar, 'url'):
                     avatar_url = str(obj.avatar.url)
-                    
+
                     # Cloudinary URLs thường đã là absolute URLs
                     if avatar_url.startswith('http'):
                         return avatar_url
-                    
+
                     # Nếu không phải absolute URL, thêm base URL
                     if avatar_url and not avatar_url.startswith('http'):
                         # Đối với Cloudinary, có thể cần build URL theo cách khác
                         if hasattr(obj.avatar, 'build_url'):
                             return obj.avatar.build_url()
-                        
+
                         request = self.context.get('request')
                         if request:
                             avatar_url = request.build_absolute_uri(avatar_url)
-                    
+
                     return avatar_url
-                    
+
                 # Nếu là string (đường dẫn), xử lý tương tự
                 elif isinstance(obj.avatar, str):
                     avatar_url = obj.avatar
                     if avatar_url.startswith('http'):
                         return avatar_url
-                        
+
                     request = self.context.get('request')
                     if request:
                         avatar_url = request.build_absolute_uri(avatar_url)
                     return avatar_url
-                    
+
             except Exception as e:
                 # Log lỗi để debug
                 print(f"Error getting avatar URL for user {obj.username}: {str(e)}")
-                
+
         return None

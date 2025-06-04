@@ -1,6 +1,6 @@
 import axios from "axios"
 
-export const BASE_URL = "http://192.168.1.15:8000"
+export const BASE_URL = "http://192.168.100.179:8000";
 
 
 export const endpoints = {
@@ -10,11 +10,18 @@ export const endpoints = {
     'reminders': 'reminders/',
     'my-statistics': 'api/my-statistics/',
     'current-user': `users/current-user/`,
-    'health-stats': 'healthstat/',
+    'health-stats': '/health-stats/',
+    'user-infor': (id) => `user-infor/${id}/`, // Sử dụng hàm để truyền ID
+    'exercises': '/exercises/', // Lấy danh sách bài tập hoặc tạo bài tập mới
+    'muscle-groups': '/muscle-groups/',
+    'exercise-detail': (id) => `/exercises/${id}/`, // Lấy chi tiết bài tập
+    'workouts': '/workout-sessions/', // Lấy danh sách hoặc tạo mới lịch tập luyện
+    'workout-detail': (id) => `/workout-sessions/${id}/`, // Lấy chi tiết lịch tập luyện
+    'diaries': '/diaries/', // endpoint cho nhật ký
+    'health-stats': 'health-stats/',
     'health-stats-track-changes': 'healthstat/track-changes/',
     'experts': 'api/experts-coaches',
-    'user-info': 'user-infor/'
-}
+};
 
 export const authApi = (token) => {
     return axios.create({
