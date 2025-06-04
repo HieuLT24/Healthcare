@@ -708,6 +708,19 @@ const ChatRoomsList = ({ route }) => {
             return avatar;
         };
 
+        // Function to handle viewing expert's health status
+        const handleViewExpertHealthStatus = () => {
+            navigation.navigate('Trang chủ', {
+                screen: 'Lịch sử tập luyện',
+                params: {
+                    targetUserId: item.id,
+                    targetUserName: `${item.first_name} ${item.last_name}`,
+                    isViewingOtherUser: true,
+                    initialRouteName: 'Lịch sử tập luyện'
+                }
+            });
+        };
+
         return (
             <TouchableOpacity onPress={() => handleExpertPress(item)} activeOpacity={0.8}>
                 <View style={styles.expertCard}>
@@ -727,10 +740,23 @@ const ChatRoomsList = ({ route }) => {
                                 {item.role}
                             </Text>
                             
-                            <TouchableOpacity style={styles.chatButton}>
-                                <Ionicons name="chatbubble" size={16} color="#065f46" />
-                                <Text style={styles.chatButtonText}>Nhắn tin</Text>
-                            </TouchableOpacity>
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity style={styles.chatButton}>
+                                    <Ionicons name="chatbubble" size={16} color="#065f46" />
+                                    <Text style={styles.chatButtonText}>Nhắn tin</Text>
+                                </TouchableOpacity>
+                                
+                                {/* Chỉ hiển thị nút xem tình trạng sức khỏe cho expert/coach và không phải chính mình */}
+                                {(currentUserRole === 'expert' || currentUserRole === 'coach') && (
+                                    <TouchableOpacity 
+                                        style={styles.healthButton}
+                                        onPress={handleViewExpertHealthStatus}
+                                    >
+                                        <Ionicons name="fitness" size={16} color="#0369a1" />
+                                        <Text style={styles.healthButtonText}>Xem sức khỏe</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -757,6 +783,28 @@ const ChatRoomsList = ({ route }) => {
             return avatar;
         };
 
+        // Function to handle viewing user's health status
+        const handleViewHealthStatus = () => {
+            navigation.navigate('Trang chủ', {
+                screen: 'Lịch sử tập luyện',
+                params: {
+                    targetUserId: item.id,
+                    targetUserName: `${item.first_name} ${item.last_name}`,
+                    isViewingOtherUser: true,
+                    initialRouteName: 'Lịch sử tập luyện'
+                }
+            },
+            {
+                screen: 'Chỉ số cá nhân',
+                params: {
+                    targetUserId: item.id,
+                    targetUserName: `${item.first_name} ${item.last_name}`,
+                    isViewingOtherUser: true,
+                }
+            },
+        );
+        };
+
         return (
             <TouchableOpacity onPress={() => handleUserPress(item)} activeOpacity={0.8}>
                 <View style={styles.expertCard}>
@@ -776,10 +824,23 @@ const ChatRoomsList = ({ route }) => {
                                 Thành viên
                             </Text>
                             
-                            <TouchableOpacity style={styles.chatButton}>
-                                <Ionicons name="chatbubble" size={16} color="#065f46" />
-                                <Text style={styles.chatButtonText}>Nhắn tin</Text>
-                            </TouchableOpacity>
+                            <View style={styles.actionButtons}>
+                                <TouchableOpacity style={styles.chatButton}>
+                                    <Ionicons name="chatbubble" size={16} color="#065f46" />
+                                    <Text style={styles.chatButtonText}>Nhắn tin</Text>
+                                </TouchableOpacity>
+                                
+                                {/* Chỉ hiển thị nút xem tình trạng sức khỏe cho expert/coach */}
+                                {(currentUserRole === 'expert' || currentUserRole === 'coach') && (
+                                    <TouchableOpacity 
+                                        style={styles.healthButton}
+                                        onPress={handleViewHealthStatus}
+                                    >
+                                        <Ionicons name="fitness" size={16} color="#0369a1" />
+                                        <Text style={styles.healthButtonText}>Xem sức khỏe</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -1178,6 +1239,11 @@ const styles = StyleSheet.create({
         color: '#65676b',
         marginLeft: 4,
     },
+    actionButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+    },
     chatButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1190,6 +1256,22 @@ const styles = StyleSheet.create({
     chatButtonText: {
         fontSize: 14,
         color: '#065f46',
+        marginLeft: 6,
+        fontWeight: '600',
+    },
+    healthButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e0f2fe',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginLeft: 8,
+        alignSelf: 'flex-start',
+    },
+    healthButtonText: {
+        fontSize: 14,
+        color: '#0369a1',
         marginLeft: 6,
         fontWeight: '600',
     },

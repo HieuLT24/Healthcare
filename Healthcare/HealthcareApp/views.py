@@ -217,7 +217,72 @@ class PersonalStatisticView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.WorkoutSessionReadSerializer
 
+    @swagger_auto_schema(
+        operation_description="Lấy thống kê cá nhân hoặc của khách hàng (cho chuyên gia/huấn luyện viên)",
+        manual_parameters=[
+            openapi.Parameter(
+                'user_id',
+                openapi.IN_QUERY,
+                description="ID của người dùng cần xem thống kê (chỉ dành cho chuyên gia/huấn luyện viên)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                'period',
+                openapi.IN_QUERY,
+                description="Khoảng thời gian thống kê",
+                type=openapi.TYPE_STRING,
+                enum=['weekly', 'monthly', 'yearly'],
+                default='weekly'
+            ),
+            openapi.Parameter(
+                'week',
+                openapi.IN_QUERY,
+                description="Tuần cụ thể (format: YYYY-Wnn, ví dụ: 2024-W01)",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+            openapi.Parameter(
+                'month',
+                openapi.IN_QUERY,
+                description="Tháng cụ thể (format: YYYY-MM, ví dụ: 2024-01)",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+            openapi.Parameter(
+                'year',
+                openapi.IN_QUERY,
+                description="Năm cụ thể (format: YYYY, ví dụ: 2024)",
+                type=openapi.TYPE_STRING,
+                required=False
+            )
+        ]
+    )
     def get(self, request):
+        # Lấy user_id từ query params (optional)
+        user_id = request.query_params.get('user_id')
+        
+        # Xác định target_user
+        if user_id:
+            # Kiểm tra quyền: chỉ EXPERT hoặc COACH mới được xem thống kê của user khác
+            if request.user.role not in [Role.EXPERT.value, Role.COACH.value]:
+                return Response(
+                    {'error': 'Bạn không có quyền xem thống kê của người dùng khác'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Kiểm tra user_id có tồn tại không
+            try:
+                target_user = User.objects.get(id=user_id, is_active=True)
+            except User.DoesNotExist:
+                return Response(
+                    {'error': 'Không tìm thấy người dùng'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Nếu không có user_id, xem thống kê của chính mình
+            target_user = request.user
+        
         period = request.query_params.get('period', 'weekly')
         today = now().date()
         
@@ -307,15 +372,15 @@ class PersonalStatisticView(RetrieveAPIView):
         else:
             return Response({'error': 'Invalid period. Use weekly, monthly, or yearly'}, status=400)
 
-        # Lấy dữ liệu tập luyện
+        # Lấy dữ liệu tập luyện - sử dụng target_user thay vì request.user
         workout_sessions = WorkoutSession.objects.filter(
-            user=request.user,
+            user=target_user,
             updated_date__date__range=(start_date, end_date),
         )
         
-        # Lấy dữ liệu sức khỏe
+        # Lấy dữ liệu sức khỏe - sử dụng target_user thay vì request.user
         health_stats = HealthStat.objects.filter(
-            user=request.user,
+            user=target_user,
             date__range=(start_date, end_date),
         ).order_by('date')
         
@@ -442,6 +507,12 @@ class PersonalStatisticView(RetrieveAPIView):
                 weight_change = latest.weight - earliest.weight
         
         return Response({
+            'target_user': {
+                'id': target_user.id,
+                'username': target_user.username,
+                'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
+                'role': target_user.role
+            },
             'start_date': start_date,
             'end_date': end_date,
             'period': period,
@@ -464,14 +535,58 @@ class HealthStatViewSet(viewsets.ModelViewSet):
     serializer_class = HealthStatSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return HealthStat.objects.filter(user=self.request.user).order_by('-date')
+    def get_target_user(self, request):
+        """Xác định target user dựa trên user_id parameter"""
+        user_id = request.query_params.get('user_id')
+        
+        if user_id:
+            # Kiểm tra quyền: chỉ EXPERT hoặc COACH mới được xem dữ liệu của user khác
+            if request.user.role not in [Role.EXPERT.value, Role.COACH.value]:
+                return None, Response(
+                    {'error': 'Bạn không có quyền xem dữ liệu của người dùng khác'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Kiểm tra user_id có tồn tại không
+            try:
+                target_user = User.objects.get(id=user_id, is_active=True)
+                return target_user, None
+            except User.DoesNotExist:
+                return None, Response(
+                    {'error': 'Không tìm thấy người dùng'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Nếu không có user_id, xem dữ liệu của chính mình
+            return request.user, None
 
+    def get_queryset(self):
+        target_user, error_response = self.get_target_user(self.request)
+        if error_response:
+            return HealthStat.objects.none()
+        return HealthStat.objects.filter(user=target_user).order_by('-date')
+
+    @swagger_auto_schema(
+        operation_description="Lấy danh sách dữ liệu sức khỏe của bản thân hoặc khách hàng (cho chuyên gia/huấn luyện viên)",
+        manual_parameters=[
+            openapi.Parameter(
+                'user_id',
+                openapi.IN_QUERY,
+                description="ID của người dùng cần xem dữ liệu (chỉ dành cho chuyên gia/huấn luyện viên)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            )
+        ]
+    )
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        target_user, error_response = self.get_target_user(request)
+        if error_response:
+            return error_response
+            
+        queryset = HealthStat.objects.filter(user=target_user).order_by('-date')
         
         # Tính trung bìinhf giá trị
-        user_stats = HealthStat.objects.filter(user=self.request.user).order_by('-date').first()
+        user_stats = HealthStat.objects.filter(user=target_user).order_by('-date').first()
         
         # Nếu có bản ghi
         if user_stats:
@@ -492,9 +607,32 @@ class HealthStatViewSet(viewsets.ModelViewSet):
             item['step_count'] = avg_step_count
             item['heart_rate'] = avg_heart_rate
         
-        return Response(data)
+        # Thêm thông tin target_user vào response
+        response_data = {
+            'target_user': {
+                'id': target_user.id,
+                'username': target_user.username,
+                'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
+                'role': target_user.role
+            },
+            'results': data
+        }
+        
+        return Response(response_data)
 
     def update(self, request, *args, **kwargs):
+        target_user, error_response = self.get_target_user(request)
+        if error_response:
+            return error_response
+            
+        # Chỉ cho phép chỉnh sửa dữ liệu của chính mình
+        # Chuyên gia không được chỉnh sửa dữ liệu của khách hàng
+        if target_user != request.user:
+            return Response(
+                {'error': 'Bạn không có quyền chỉnh sửa dữ liệu của người dùng khác'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
@@ -522,6 +660,10 @@ class HealthStatViewSet(viewsets.ModelViewSet):
         """
         Theo dõi sự thay đổi cân nặng, chiều cao theo thời gian (tuần, tháng, năm)
         """
+        target_user, error_response = self.get_target_user(request)
+        if error_response:
+            return error_response
+            
         period = request.query_params.get('period', 'weekly')
         today = now().date()
         
@@ -534,11 +676,17 @@ class HealthStatViewSet(viewsets.ModelViewSet):
         start_date = period_data['start_date']
         end_date = period_data['end_date']
         
-        # Lấy dữ liệu và tính toán thay đổi
-        result = self._calculate_changes_from_records(request.user, start_date, end_date)
+        # Lấy dữ liệu và tính toán thay đổi - sử dụng target_user
+        result = self._calculate_changes_from_records(target_user, start_date, end_date)
         
         # Tạo dữ liệu trả về
         data = {
+            'target_user': {
+                'id': target_user.id,
+                'username': target_user.username,
+                'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
+                'role': target_user.role
+            },
             'period': period,
             'start_date': start_date,
             'end_date': end_date,

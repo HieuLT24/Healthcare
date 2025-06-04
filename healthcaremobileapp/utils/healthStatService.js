@@ -146,11 +146,17 @@ export const getLatestHealthStat = async () => {
 
     const url = endpoints['health-stats'];
     const response = await authApi(token).get(url);
+    console.log('Latest health stat response x:', response.data);
+    
+    // Check if response has results array
+    const healthStats = response.data.results || response.data;
+    console.log('Health stats array:', healthStats);
+    console.log('data length:', healthStats.length);
     
     // Return the first item which should be the most recent one
-    return response.data.length > 0 ? response.data[0] : null;
+    return healthStats.length > 0 ? healthStats[0] : null;
   } catch (error) {
     console.error('Error fetching latest health statistics:', error);
     throw error;
   }
-}; 
+};
