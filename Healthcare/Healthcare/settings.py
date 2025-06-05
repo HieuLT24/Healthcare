@@ -266,6 +266,3 @@ SWAGGER_SETTINGS = {
 
 # Timezone settings
 USE_L10N = True
-
-client_id_Hieu='mOINziVcYXX1vl4g9EO2XZzgMnC0hkTsVJUBkMn1'
-client_secret_Hieu = 'IDgWxpeSwUo8wwZFZIQZx5z1wyphov496QCTvhWThaPaTGgK51FaC2JqcdDtUwCejlvuar4QUB77vlSlHP1dV5jSK4YOamS882lVRwHxwMtk9FIJK68JTvYZXtyPNwWt'
