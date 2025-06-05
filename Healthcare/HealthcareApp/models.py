@@ -33,32 +33,32 @@ class BaseModel(models.Model):
         abstract = True
 
 class User(AbstractUser):
-    avatar = CloudinaryField(null=True, blank=True,
-                             folder='user_avatar',
-                             )
+    avatar = CloudinaryField(null=True, blank=True, folder='user_avatar')
     role = models.CharField(max_length=50, choices=[(role.name, role.value) for role in Role], default=Role.USER.value)
-    date_of_birth= models.DateField(null=True)
+    date_of_birth = models.DateField(null=True, blank=True)  # Ngày sinh
+    height = models.FloatField(null=True, blank=True)  # Chiều cao cơ bản (m)
+    weight = models.FloatField(null=True, blank=True)  # Cân nặng cơ bản (kg)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
 
 
 class HealthStat(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='health_stats')
-    date = models.DateTimeField(auto_now_add=True)
-    weight = models.FloatField(null=True, blank=True)  # kg
-    height = models.FloatField(null=True, blank=True)  # m
-    bmi = models.FloatField(null=True, blank=True)
-    water_intake = models.FloatField(default=0)  # lít
-    step_count = models.IntegerField(default=0)
-    heart_rate = models.IntegerField(null=True, blank=True)  # bpm
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_stats')
+    date = models.DateField(auto_now_add=True)  # Ngày ghi nhận
+    bmi = models.FloatField(null=True, blank=True)  # BMI
+    weight = models.FloatField(null=True, blank=True)  # Cân nặng (kg)
+    height = models.FloatField(null=True, blank=True)  # Chiều cao (m)
+    water_intake = models.FloatField(default=0)  # Lượng nước uống (lít)
+    step_count = models.IntegerField(default=0)  # Số bước đi bộ
+    heart_rate = models.IntegerField(null=True, blank=True)  # Nhịp tim (bpm)
 
     def save(self, *args, **kwargs):
+        # Tính toán BMI
         if self.height and self.weight:
             try:
-                self.bmi = self.weight / ((self.height*0.01) ** 2)
+                self.bmi = round(self.weight / (self.height ** 2), 2)  # Làm tròn đến 2 số thập phân
             except ZeroDivisionError:
                 self.bmi = None
         super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.user.username} - {self.date}"
 

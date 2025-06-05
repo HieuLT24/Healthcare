@@ -24,6 +24,8 @@ const Statistic = () => {
     const [period, setPeriod] = useState('weekly')
     const [selectedDate, setSelectedDate] = useState(moment())
     const [menuVisible, setMenuVisible] = useState(false)
+    const [healthStats, setHealthStats] = useState([]);
+    const [loadingHealth, setLoadingHealth] = useState(true);
 
     const loadStatistic = async (period, date) => {
         try {

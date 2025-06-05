@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime, date
 
 from allauth.headless.base.views import APIView
+from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, Avg, Max, Min
 from rest_framework import (mixins, viewsets,
                             permissions, generics, parsers,
@@ -18,7 +19,7 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 
 from HealthcareApp.models import User, Exercise, WorkoutSession, Diary, NutritionGoal, \
-    NutritionPlan, Role, Meal, FoodItem, HealthStat
+    NutritionPlan, Role, Meal, FoodItem, HealthStat, MuscleGroup
 from django.http import HttpResponse
 
 from collections import defaultdict
@@ -27,7 +28,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.utils.timezone import now
 
 from HealthcareApp.serializers import HealthStatSerializer, WorkoutSessionWriteSerializer, WorkoutSessionReadSerializer, \
-    ExerciseSerializer
+    ExerciseSerializer, NutritionGoalSerializer, UserInforSerializer, MuscleGroupSerializer
 
 from django.db import models
 from drf_yasg import openapi
@@ -90,6 +91,38 @@ class UserViewSet(viewsets.ViewSet):
         else:
             return Response(serializers.UserSerializer(request.user).data)
 
+class UserInforViewSet(viewsets.ViewSet, generics.UpdateAPIView):
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = UserInforSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Chỉ cho phép người dùng hiện tại
+        return self.queryset.filter(id=self.request.user.id)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+
+class HealthStatViewSet(viewsets.ModelViewSet):
+    serializer_class = HealthStatSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return HealthStat.objects.filter(user=self.request.user).order_by('-date', '-id')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 class HieuUserInforViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.HieuUserInforSerializer
@@ -111,7 +144,7 @@ class HieuUserInforViewSet(viewsets.ViewSet):
         Lấy danh sách tất cả người dùng có role là user
         """
         queryset = self.queryset
-        
+
         # Tìm kiếm theo tên
         search = request.query_params.get('search', None)
         if search:
@@ -120,10 +153,10 @@ class HieuUserInforViewSet(viewsets.ViewSet):
                 Q(last_name__icontains=search) |
                 Q(username__icontains=search)
             )
-        
+
         # Sắp xếp theo ngày tham gia
         queryset = queryset.order_by('-date_joined')
-        
+
         serializer = self.serializer_class(queryset, many=True, context={'request': request})
         return Response({
             'count': queryset.count(),
@@ -151,7 +184,10 @@ class HieuUserInforViewSet(viewsets.ViewSet):
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.filter(is_active=True)
     serializer_class = ExerciseSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+    # Giới hạn các phương thức được hỗ trợ
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def get_queryset(self):
         user = self.request.user
@@ -165,6 +201,24 @@ class ExerciseViewSet(viewsets.ModelViewSet):
             is_active=True
         )
 
+class MuscleGroupViewSet(viewsets.ReadOnlyModelViewSet):  # chỉ GET
+    queryset = MuscleGroup.objects.filter(is_active=True)
+    serializer_class = MuscleGroupSerializer
+
+class WorkoutSessionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
+
+    def get_queryset(self):
+        return WorkoutSession.objects.filter(user=self.request.user, is_active=True)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return WorkoutSessionWriteSerializer
+        return WorkoutSessionReadSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class WorkoutSessionReadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -179,7 +233,6 @@ class WorkoutSessionReadViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 class DiaryViewSet(viewsets.ModelViewSet):
     queryset = Diary.objects.filter(is_active=True)
@@ -261,7 +314,7 @@ class PersonalStatisticView(RetrieveAPIView):
     def get(self, request):
         # Lấy user_id từ query params (optional)
         user_id = request.query_params.get('user_id')
-        
+
         # Xác định target_user
         if user_id:
             # Kiểm tra quyền: chỉ EXPERT hoặc COACH mới được xem thống kê của user khác
@@ -270,7 +323,7 @@ class PersonalStatisticView(RetrieveAPIView):
                     {'error': 'Bạn không có quyền xem thống kê của người dùng khác'},
                     status=status.HTTP_403_FORBIDDEN
                 )
-            
+
             # Kiểm tra user_id có tồn tại không
             try:
                 target_user = User.objects.get(id=user_id, is_active=True)
@@ -282,7 +335,7 @@ class PersonalStatisticView(RetrieveAPIView):
         else:
             # Nếu không có user_id, xem thống kê của chính mình
             target_user = request.user
-        
+
         period = request.query_params.get('period', 'weekly')
         today = now().date()
         
@@ -327,7 +380,7 @@ class PersonalStatisticView(RetrieveAPIView):
                     
                     _, last_day = calendar.monthrange(year, month)
                     end_date = datetime(year, month, last_day).date()
-                    
+
                     # Nếu là tháng hiện tại, end_date là hôm nay
                     if year == today.year and month == today.month:
                         end_date = min(end_date, today)
@@ -348,7 +401,7 @@ class PersonalStatisticView(RetrieveAPIView):
                 try:
                     year = int(year_param)
                     start_date = datetime(year, 1, 1).date()
-                    
+
                     if year == today.year:
                         # Nếu là năm hiện tại, end_date là hôm nay
                         end_date = today
@@ -538,7 +591,7 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
     def get_target_user(self, request):
         """Xác định target user dựa trên user_id parameter"""
         user_id = request.query_params.get('user_id')
-        
+
         if user_id:
             # Kiểm tra quyền: chỉ EXPERT hoặc COACH mới được xem dữ liệu của user khác
             if request.user.role not in [Role.EXPERT.value, Role.COACH.value]:
@@ -546,7 +599,7 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                     {'error': 'Bạn không có quyền xem dữ liệu của người dùng khác'},
                     status=status.HTTP_403_FORBIDDEN
                 )
-            
+
             # Kiểm tra user_id có tồn tại không
             try:
                 target_user = User.objects.get(id=user_id, is_active=True)
@@ -579,15 +632,19 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
         ]
     )
     def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
         target_user, error_response = self.get_target_user(request)
         if error_response:
             return error_response
-            
+
         queryset = HealthStat.objects.filter(user=target_user).order_by('-date')
-        
+
         # Tính trung bìinhf giá trị
+        user_stats = HealthStat.objects.filter(user=self.request.user).order_by('-date').first()
+
         user_stats = HealthStat.objects.filter(user=target_user).order_by('-date').first()
-        
+
         # Nếu có bản ghi
         if user_stats:
             avg_water_intake = round(user_stats.water_intake, 2)
@@ -597,16 +654,18 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             avg_water_intake = 0
             avg_step_count = 0
             avg_heart_rate = None
-        
+
         # Serialize the data
         serializer = self.get_serializer(queryset, many=True)
         data = serializer.data
-        
+
         for item in data:
             item['water_intake'] = avg_water_intake
             item['step_count'] = avg_step_count
             item['heart_rate'] = avg_heart_rate
-        
+
+        return Response(data)
+
         # Thêm thông tin target_user vào response
         response_data = {
             'target_user': {
@@ -617,14 +676,14 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             },
             'results': data
         }
-        
+
         return Response(response_data)
 
     def update(self, request, *args, **kwargs):
         target_user, error_response = self.get_target_user(request)
         if error_response:
             return error_response
-            
+
         # Chỉ cho phép chỉnh sửa dữ liệu của chính mình
         # Chuyên gia không được chỉnh sửa dữ liệu của khách hàng
         if target_user != request.user:
@@ -632,10 +691,10 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                 {'error': 'Bạn không có quyền chỉnh sửa dữ liệu của người dùng khác'},
                 status=status.HTTP_403_FORBIDDEN
             )
-            
+
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        
+
         # Thay vì cập nhật vào bản ghi hiện tại, tạo bản ghi mới
         new_data = {
             'user': request.user.id,
@@ -645,16 +704,16 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             'weight': request.data.get('weight', instance.weight),
             'height': request.data.get('height', instance.height),
         }
-        
+
         serializer = self.get_serializer(data=new_data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        
+
         return Response(serializer.data)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-        
+
     @action(detail=False, methods=['get'], url_path='track-changes')
     def track_changes(self, request):
         """
@@ -663,22 +722,26 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
         target_user, error_response = self.get_target_user(request)
         if error_response:
             return error_response
-            
+
         period = request.query_params.get('period', 'weekly')
         today = now().date()
-        
+
         # Xác định khoảng thời gian dựa trên period
         try:
             period_data = self._get_period_dates(period, request, today)
         except ValueError as e:
             return Response({'error': str(e)}, status=400)
-            
+
         start_date = period_data['start_date']
         end_date = period_data['end_date']
-        
+
+        # Lấy dữ liệu và tính toán thay đổi
+        result = self._calculate_changes_from_records(request.user, start_date, end_date)
+
+
         # Lấy dữ liệu và tính toán thay đổi - sử dụng target_user
         result = self._calculate_changes_from_records(target_user, start_date, end_date)
-        
+
         # Tạo dữ liệu trả về
         data = {
             'target_user': {
@@ -694,13 +757,13 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             'last_record': result['last_record'],
             'changes': result['changes']
         }
-        
+
         # Thêm trường year cho period yearly
         if period == 'yearly' and 'year' in period_data:
             data['year'] = period_data['year']
-        
+
         return Response(data)
-    
+
     def _get_period_dates(self, period, request, today):
         """
         Xác định ngày bắt đầu và kết thúc dựa trên period và tham số
@@ -713,23 +776,23 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                     year_str, week_str = week_param.split('-W')
                     year = int(year_str)
                     week = int(week_str)
-                    
+
                     # Sử dụng thư viện ISO calendar để tính chính xác tuần
                     # Tìm ngày đầu tiên (thứ Hai) của tuần
                     # Đầu tiên, lấy một ngày bất kỳ trong tuần cần tìm
                     jan4 = date(year, 1, 4)  # Ngày 4/1 luôn nằm trong tuần đầu tiên của năm theo ISO
                     jan4_week = jan4.isocalendar()[1]  # Lấy số tuần của ngày 4/1
-                    
+
                     # Tính số ngày cần thêm/bớt để đến tuần cần tìm
                     days_delta = (week - jan4_week) * 7
-                    
+
                     # Tìm một ngày trong tuần cần tìm
                     sample_day = jan4 + timedelta(days=days_delta)
-                    
+
                     # Tìm thứ Hai của tuần đó
                     start_date = sample_day - timedelta(days=sample_day.weekday())
                     end_date = start_date + timedelta(days=6)
-                    
+
                     # Nếu là tuần hiện tại, end_date là hôm nay
                     if start_date <= today <= end_date:
                         end_date = today
@@ -739,22 +802,22 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                 # Default to current week if no week specified
                 start_date = today - timedelta(days=today.weekday())  # Thứ 2 của tuần hiện tại
                 end_date = min(start_date + timedelta(days=6), today)  # Chủ nhật hoặc hôm nay, tùy cái nào sớm hơn
-            
+
             return {
                 'start_date': start_date,
                 'end_date': end_date
             }
-            
+
         elif period == 'monthly':
             month_param = request.query_params.get('month')
             if month_param:
                 try:
                     year, month = map(int, month_param.split('-'))
                     start_date = datetime(year, month, 1).date()
-                    
+
                     _, last_day = calendar.monthrange(year, month)
                     end_date = datetime(year, month, last_day).date()
-                    
+
                     # Nếu là tháng hiện tại, end_date là hôm nay
                     if year == today.year and month == today.month:
                         end_date = min(end_date, today)
@@ -765,19 +828,19 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                 start_date = today.replace(day=1)  # Ngày đầu tiên của tháng
                 _, last_day = calendar.monthrange(today.year, today.month)
                 end_date = min(today.replace(day=last_day), today)  # Ngày cuối cùng của tháng hoặc hôm nay
-                
+
             return {
                 'start_date': start_date,
                 'end_date': end_date
             }
-            
+
         elif period == 'yearly':
             year_param = request.query_params.get('year')
             if year_param:
                 try:
                     year = int(year_param)
                     start_date = datetime(year, 1, 1).date()
-                    
+
                     if year == today.year:
                         # Nếu là năm hiện tại, end_date là hôm nay
                         end_date = today
@@ -790,7 +853,7 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                 year = today.year
                 start_date = datetime(year, 1, 1).date()
                 end_date = today
-                
+
             return {
                 'start_date': start_date,
                 'end_date': end_date,
@@ -798,7 +861,7 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             }
         else:
             raise ValueError('Invalid period. Use weekly, monthly, or yearly')
-    
+
     def _calculate_changes_from_records(self, user, start_date, end_date):
         """
         Lấy bản ghi đầu tiên và cuối cùng, tính toán thay đổi
@@ -808,7 +871,7 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
             user=user,
             date__range=(start_date, end_date)
         ).order_by('date')
-        
+
         first_record = None
         if first_records.exists():
             # Lấy ngày đầu tiên có bản ghi
@@ -818,27 +881,27 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
                 user=user,
                 date=first_date
             ).order_by('id').first()
-        
+
         # Lấy bản ghi cuối cùng - sắp xếp theo ngày giảm dần và ID giảm dần
         # Để lấy bản ghi mới nhất (ID lớn nhất) của ngày mới nhất
         last_record = HealthStat.objects.filter(
             user=user,
             date__range=(start_date, end_date)
         ).order_by('-date', '-id').first()
-        
+
         # Tính sự thay đổi nếu có cả hai bản ghi
         changes = {
             'weight_change': None,
             'height_change': None
         }
-        
+
         if first_record and last_record and first_record.id != last_record.id:
             if first_record.weight is not None and last_record.weight is not None:
                 changes['weight_change'] = round(last_record.weight - first_record.weight, 2)
-            
+
             if first_record.height is not None and last_record.height is not None:
                 changes['height_change'] = round(last_record.height - first_record.height, 2)
-        
+
         return {
             'first_record': {
                 'date': first_record.date if first_record else None,
@@ -858,7 +921,7 @@ class ExpertCoachListView(generics.ListAPIView):
     """API lấy danh sách chuyên gia và huấn luyện viên"""
     serializer_class = serializers.ExpertCoachSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         """
         Lấy danh sách user có role là EXPERT hoặc COACH
@@ -868,12 +931,12 @@ class ExpertCoachListView(generics.ListAPIView):
             is_active=True,
             role__in=[Role.EXPERT.value, Role.COACH.value]
         ).order_by('-date_joined')
-        
+
         # Filter theo role cụ thể nếu có
         role_filter = self.request.query_params.get('role', None)
         if role_filter and role_filter in [Role.EXPERT.value, Role.COACH.value]:
             queryset = queryset.filter(role=role_filter)
-            
+
         # Tìm kiếm theo tên
         search = self.request.query_params.get('search', None)
         if search:
@@ -882,9 +945,9 @@ class ExpertCoachListView(generics.ListAPIView):
                 models.Q(last_name__icontains=search) |
                 models.Q(username__icontains=search)
             )
-            
+
         return queryset
-    
+
     @swagger_auto_schema(
         operation_description="Lấy danh sách chuyên gia và huấn luyện viên",
         manual_parameters=[
