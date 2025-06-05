@@ -195,7 +195,17 @@ DATABASES = {
         'NAME': 'healthappdb',
         'USER': 'root',
         'PASSWORD': 'root',
-        'HOST': ''
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'; SET time_zone='+07:00';",
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+        },
+        'TEST': {
+            'CHARSET': 'utf8mb4',
+            'COLLATION': 'utf8mb4_unicode_ci',
+        }
     }
 }
 
@@ -224,11 +234,11 @@ AUTH_USER_MODEL = 'HealthcareApp.User'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False  # Disable timezone support to avoid conversion issues
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -253,6 +263,9 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,  # Tắt/bật đăng nhập bằng username/password
 }
+
+# Timezone settings
+USE_L10N = True
 
 client_id_Hieu='mOINziVcYXX1vl4g9EO2XZzgMnC0hkTsVJUBkMn1'
 client_secret_Hieu = 'IDgWxpeSwUo8wwZFZIQZx5z1wyphov496QCTvhWThaPaTGgK51FaC2JqcdDtUwCejlvuar4QUB77vlSlHP1dV5jSK4YOamS882lVRwHxwMtk9FIJK68JTvYZXtyPNwWt'

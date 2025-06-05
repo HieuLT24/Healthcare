@@ -1,10 +1,11 @@
 from datetime import date, datetime
+from django.utils import timezone
 
 
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.fields import DateField, DateTimeField
 from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import ModelSerializer, FloatField, CharField
+from rest_framework.serializers import ModelSerializer, FloatField, CharField, DateField, DateTimeField
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
      NutritionGoal, NutritionPlan, Meal, FoodItem, HealthStat
 from django.contrib.auth import get_user_model, authenticate
@@ -140,9 +141,22 @@ class UserSerializer(ModelSerializer):
 
 
 class HieuUserInforSerializer(ModelSerializer):
+    date_of_birth = serializers.SerializerMethodField()
+    date_joined = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'avatar', 'date_of_birth','date_joined', 'role']
+        fields = ['id', 'username', 'first_name', 'last_name', 'avatar', 'date_of_birth', 'date_joined', 'role']
+
+    def get_date_of_birth(self, obj):
+        if obj.date_of_birth:
+            return obj.date_of_birth.strftime('%Y-%m-%d')
+        return None
+
+    def get_date_joined(self, obj):
+        if obj.date_joined:
+            return obj.date_joined.strftime('%Y-%m-%d %H:%M:%S')
+        return None
 
 class UserInforSerializer(ModelSerializer):
     age = FloatField(required=False)  # Tuổi
@@ -152,7 +166,7 @@ class UserInforSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = [ 'age', 'height', 'weight', 'health_goals']
+        fields = ['age', 'height', 'weight', 'health_goals']
 
     def update(self, instance, validated_data):
         # Cập nhật thông tin cơ bản
@@ -165,28 +179,33 @@ class UserInforSerializer(ModelSerializer):
             today = date.today()
             age = validated_data['age']
             year_of_birth = today.year - int(age)
-            month = today.month
-            day = today.day
-            instance.date_of_birth = date(year_of_birth, month, day)
+            instance.date_of_birth = date(year_of_birth, today.month, today.day)
 
         # Lưu thông tin người dùng
         instance.save()
         return instance
 
-class DateField(serializers.DateField):
-    def to_representation(self, value):
-        if isinstance(value, datetime):
-            return value.date()
-        return value
-
 class HealthStatSerializer(ModelSerializer):
-    date = DateField()
+
+    date = serializers.SerializerMethodField()
+
     class Meta:
         model = HealthStat
-        fields ='__all__'
+        fields = ['id', 'date', 'bmi', 'weight', 'height', 'water_intake', 'step_count', 'heart_rate']
+        read_only_fields = ['date', 'bmi']
+
+    def get_date(self, obj):
+        if obj.date:
+            return obj.date.strftime('%Y-%m-%d %H:%M:%S')
+        return None
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        health_stat = HealthStat.objects.create(user=user, **validated_data)
+        return health_stat
 
 class HealthStatisticSerializer(ModelSerializer):
-    date = DateField()
+    date = serializers.SerializerMethodField()
 
     class Meta:
         model = HealthStat
@@ -196,6 +215,11 @@ class HealthStatisticSerializer(ModelSerializer):
                 "read_only": True
             }
         }
+
+    def get_date(self, obj):
+        if obj.date:
+            return obj.date.strftime('%Y-%m-%d %H:%M:%S')
+        return None
 
 class MuscleGroupSerializer(ModelSerializer):
     class Meta:
@@ -269,11 +293,18 @@ class NutritionGoalSerializer(ModelSerializer):
                  'daily_proteins','daily_carbs','daily_fats','user']
 
 class NutritionPlanSerializer(ModelSerializer):
+    date = serializers.SerializerMethodField()
+
     class Meta:
         model = NutritionPlan
-        fields =['id','name','date','total_calories',
-                 'total_proteins','total_carbs','total_fats',
-                 'user','meals']
+        fields = ['id', 'name', 'date', 'total_calories',
+                 'total_proteins', 'total_carbs', 'total_fats',
+                 'user', 'meals']
+
+    def get_date(self, obj):
+        if obj.date:
+            return obj.date.strftime('%Y-%m-%d')
+        return None
 
 class MealSerializer(ModelSerializer):
     class Meta:
@@ -291,6 +322,9 @@ class ExpertCoachSerializer(ModelSerializer):
     full_name = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
 
+    date_of_birth = serializers.SerializerMethodField()
+    date_joined = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name',
@@ -304,42 +338,28 @@ class ExpertCoachSerializer(ModelSerializer):
         return obj.username
 
     def get_avatar_url(self, obj):
-        """Trả về URL avatar đầy đủ"""
+        """Trả về URL của avatar"""
         if obj.avatar:
+            return obj.avatar.url
+        return None
+
+    def get_date_of_birth(self, obj):
+        """Trả về ngày sinh dưới dạng chuỗi YYYY-MM-DD"""
+        if obj.date_of_birth:
+            return obj.date_of_birth.strftime('%Y-%m-%d')
+        return None
+
+    def get_date_joined(self, obj):
+        """Trả về ngày tham gia dưới dạng chuỗi YYYY-MM-DD HH:MM:SS"""
+        if obj.date_joined:
             try:
-                # Xử lý CloudinaryField đặc biệt
-                if hasattr(obj.avatar, 'url'):
-                    avatar_url = str(obj.avatar.url)
-
-                    # Cloudinary URLs thường đã là absolute URLs
-                    if avatar_url.startswith('http'):
-                        return avatar_url
-
-                    # Nếu không phải absolute URL, thêm base URL
-                    if avatar_url and not avatar_url.startswith('http'):
-                        # Đối với Cloudinary, có thể cần build URL theo cách khác
-                        if hasattr(obj.avatar, 'build_url'):
-                            return obj.avatar.build_url()
-
-                        request = self.context.get('request')
-                        if request:
-                            avatar_url = request.build_absolute_uri(avatar_url)
-
-                    return avatar_url
-
-                # Nếu là string (đường dẫn), xử lý tương tự
-                elif isinstance(obj.avatar, str):
-                    avatar_url = obj.avatar
-                    if avatar_url.startswith('http'):
-                        return avatar_url
-
-                    request = self.context.get('request')
-                    if request:
-                        avatar_url = request.build_absolute_uri(avatar_url)
-                    return avatar_url
-
-            except Exception as e:
-                # Log lỗi để debug
-                print(f"Error getting avatar URL for user {obj.username}: {str(e)}")
-
+                # Convert to local time if timezone-aware
+                if timezone.is_aware(obj.date_joined):
+                    date_joined = timezone.localtime(obj.date_joined)
+                else:
+                    date_joined = obj.date_joined
+                return date_joined.strftime('%Y-%m-%d %H:%M:%S')
+            except (AttributeError, ValueError, TypeError):
+                # If any error occurs during conversion, return the raw value as string
+                return str(obj.date_joined)
         return None
