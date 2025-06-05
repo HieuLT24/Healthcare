@@ -31,6 +31,20 @@ const WorkoutDetail = ({ route }) => {
   if (loading) return <ActivityIndicator size="large" color="#3EB489" style={{ marginTop: 40 }} />;
   if (!workout) return <Text style={styles.errorText}>Không tìm thấy lịch tập luyện.</Text>;
 
+  // Hàm lấy tên nhóm cơ từ mỗi bài tập
+  const getMuscleGroupsDisplay = (muscle_groups) => {
+    if (!muscle_groups || muscle_groups.length === 0) return "";
+    if (typeof muscle_groups[0] === "object" && muscle_groups[0].name) {
+      return muscle_groups.map(mg => mg.name).join(", ");
+    }
+    return muscle_groups.join(", ");
+  };
+
+  // Tính tổng calories từ các bài tập (nếu backend chưa tổng)
+  const totalCalories = Array.isArray(workout.exercise)
+    ? workout.exercise.reduce((sum, ex) => sum + (ex.calories_burned || 0), 0)
+    : 0;
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
       <View style={styles.card}>
@@ -44,12 +58,10 @@ const WorkoutDetail = ({ route }) => {
           <Text style={styles.value}>{workout.schedule?.slice(0, 16).replace("T", " ")}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.info}>🔥 {workout.calories_burned} kcal</Text>
+          <Text style={styles.info}>
+            🔥 Tổng calories tiêu thụ: {totalCalories} kcal
+          </Text>
           <Text style={styles.info}>⏳ {workout.total_duration} phút</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.info}>💓 BPM: {workout.bpm}</Text>
-          <Text style={styles.info}>🚶 Bước chân: {workout.steps}</Text>
         </View>
       </View>
 
@@ -67,7 +79,10 @@ const WorkoutDetail = ({ route }) => {
             <Text style={styles.exerciseInfo}>⏱ Thời lượng: {item.duration} phút</Text>
             <Text style={styles.exerciseInfo}>🔁 Lặp: {item.repetition}</Text>
             <Text style={styles.exerciseInfo}>📦 Số hiệp: {item.sets}</Text>
-            <Text style={styles.exerciseInfo}>🏷 Nhóm cơ: {item.muscle_groups?.join(", ")}</Text>
+            <Text style={styles.exerciseInfo}>🔥 Calories: {item.calories_burned} kcal</Text>
+            <Text style={styles.exerciseInfo}>
+              🏷 Nhóm cơ: {getMuscleGroupsDisplay(item.muscle_groups)}
+            </Text>
           </View>
         )}
         ListEmptyComponent={<Text style={{ textAlign: "center", color: "#444", marginTop: 8 }}>Không có bài tập nào.</Text>}

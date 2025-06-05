@@ -45,26 +45,28 @@ const CreateExercise = () => {
   };
 
   const handleCreate = async () => {
+    // Kiểm tra các trường bắt buộc không được rỗng hoặc chỉ có dấu cách
     if (
-      !name ||
-      !difficulty ||
-      !duration ||
-      !repetition ||
-      !sets ||
-      !calories ||
+      !name.trim() ||
+      !difficulty.trim() ||
+      !duration.trim() ||
+      !repetition.trim() ||
+      !sets.trim() ||
+      !calories.trim() ||
       selectedMuscleGroups.length === 0
     ) {
       Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin bắt buộc!");
       return;
     }
 
+    // Kiểm tra các trường số phải là số dương
     if (
-      isNaN(Number(duration)) ||
-      isNaN(Number(repetition)) ||
-      isNaN(Number(sets)) ||
-      isNaN(Number(calories))
+      isNaN(Number(duration)) || Number(duration) <= 0 ||
+      isNaN(Number(repetition)) || Number(repetition) <= 0 ||
+      isNaN(Number(sets)) || Number(sets) <= 0 ||
+      isNaN(Number(calories)) || Number(calories) <= 0
     ) {
-      Alert.alert("Lỗi", "Vui lòng nhập số hợp lệ cho các trường số!");
+      Alert.alert("Lỗi", "Vui lòng nhập số hợp lệ (lớn hơn 0) cho các trường số!");
       return;
     }
 
@@ -76,10 +78,10 @@ const CreateExercise = () => {
       }
 
       const data = {
-        name,
-        description,
-        difficulty_level: difficulty,
-        equipment,
+        name: name.trim(),
+        description: description.trim(),
+        difficulty_level: difficulty.trim(),
+        equipment: equipment.trim(),
         duration: Number(duration),
         repetition: Number(repetition),
         sets: Number(sets),

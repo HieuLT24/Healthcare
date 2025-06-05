@@ -46,7 +46,11 @@ const Profile = () => {
             });
             const data = res.data.results ? res.data.results : res.data;
             console.log("HealthStat data:", data);
-            setLatestHealth(data.length > 0 ? data[0] : null);
+            let latest = null;
+            if (data.length > 0) {
+                latest = data.reduce((a, b) => (a.id > b.id ? a : b));
+            }
+            setLatestHealth(latest);
         } catch (err) {
             setLatestHealth(null);
         } finally {

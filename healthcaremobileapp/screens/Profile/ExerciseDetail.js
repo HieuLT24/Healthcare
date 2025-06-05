@@ -77,6 +77,12 @@ const ExerciseDetail = () => {
                         <Text style={styles.value}>{exercise.duration} phút</Text>
                     </View>
                 )}
+                {typeof exercise.calories_burned !== "undefined" && exercise.calories_burned !== null && (
+                    <View style={styles.line}>
+                        <Text style={styles.label}>🔥 Lượng calo tiêu thụ: </Text>
+                        <Text style={styles.value}>{exercise.calories_burned} kcal</Text>
+                    </View>
+                )}
                 {muscleGroupsDisplay && (
                     <View style={styles.line}>
                         <Text style={styles.label}>🏷 Nhóm cơ: </Text>

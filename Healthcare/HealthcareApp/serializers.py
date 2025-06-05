@@ -1,6 +1,8 @@
-from datetime import date
+from datetime import date, datetime
+
 
 from django.contrib.auth.password_validation import validate_password
+from rest_framework.fields import DateField, DateTimeField
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer, FloatField, CharField
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
