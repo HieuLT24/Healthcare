@@ -482,12 +482,12 @@ const Statistic = () => {
             </View>
 
             {/* Thống kê sức khỏe */}
-            <View style={{ marginVertical: 16 }}>
+            {/* <View style={{ marginVertical: 16 }}>
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24, fontSize: 18, fontWeight: 'bold', color: '#065f46' }]}>
                     Chỉ số sức khỏe
                 </Text>
                 
-                {/* Cân nặng */}
+                
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 16 }]}>Cân nặng (kg)</Text>
                 <LineChart
                     data={{
@@ -524,7 +524,6 @@ const Statistic = () => {
                     }}
                 />
 
-                {/* BMI */}
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Chỉ số BMI</Text>
                 <LineChart
                     data={{
@@ -561,7 +560,6 @@ const Statistic = () => {
                     }}
                 />
 
-                {/* Lượng nước uống */}
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Lượng nước uống (lít)</Text>
                 <LineChart
                     data={{
@@ -598,7 +596,6 @@ const Statistic = () => {
                     }}
                 />
 
-                {/* Số bước chân */}
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Số bước chân</Text>
                 <LineChart
                     data={{
@@ -635,7 +632,6 @@ const Statistic = () => {
                     }}
                 />
 
-                {/* Nhịp tim */}
                 <Text style={[MyStyles.label, { marginLeft: 12, marginTop: 24 }]}>Nhịp tim (bpm)</Text>
                 <LineChart
                     data={{
@@ -671,7 +667,7 @@ const Statistic = () => {
                         return null;
                     }}
                 />
-            </View>
+            </View> */}
 
             {/* Thông tin tổng hợp sức khỏe */}
             <Card style={{ margin: 16, backgroundColor: '#f0f9ff' }}>
@@ -679,6 +675,12 @@ const Statistic = () => {
                     <Text style={{ color: '#0369a1', fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}>
                         Tổng hợp sức khỏe
                     </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: '#0369a1' }}>Chiều cao trung bình:</Text>
+                        <Text style={{ color: '#0369a1', fontWeight: 'bold' }}>
+                            {health_summary.avg_height ? `${health_summary.avg_height.toFixed(1)} cm` : 'N/A'}
+                        </Text>
+                    </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                         <Text style={{ color: '#0369a1' }}>Cân nặng trung bình:</Text>
                         <Text style={{ color: '#0369a1', fontWeight: 'bold' }}>

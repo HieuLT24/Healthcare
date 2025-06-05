@@ -43,7 +43,7 @@ class User(AbstractUser):
 
 class HealthStat(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_stats')
-    date = models.DateField(auto_now_add=True)  # Ngày ghi nhận
+    date = models.DateTimeField(auto_now_add=True)  # Ngày ghi nhận
     bmi = models.FloatField(null=True, blank=True)  # BMI
     weight = models.FloatField(null=True, blank=True)  # Cân nặng (kg)
     height = models.FloatField(null=True, blank=True)  # Chiều cao (m)
@@ -70,12 +70,37 @@ class WorkoutSession(BaseModel):
     schedule = models.DateTimeField(default=None)
     name = models.CharField(max_length=200, default=None)
     goal = models.CharField(max_length=200,null=True, blank=True)
-    total_duration = models.IntegerField(default=None)
+    total_duration = models.IntegerField(default=0)
     exercise = models.ManyToManyField('Exercise',
                                  related_name='workout_sessions')
-    bpm =models.IntegerField(null=True, blank=True)
+    bpm = models.IntegerField(null=True, blank=True)
     steps = models.IntegerField(null=True, blank=True)
-    calories_burned = models.FloatField(null=True, blank=True)
+    calories_burned = models.FloatField(default=0)
+
+    def save(self, *args, **kwargs):
+        # First save the instance to ensure it exists in DB
+        super().save(*args, **kwargs)
+        
+        # Calculate total duration and calories from exercises
+        exercises = self.exercise.all()
+        total_duration = sum(ex.duration for ex in exercises)
+        total_calories = sum(ex.calories_burned for ex in exercises)
+        
+        # Get latest health stats for the user
+        latest_health_stat = HealthStat.objects.filter(
+            user=self.user,
+            date__lte=self.schedule  # Get stats up to workout schedule time
+        ).order_by('-date').first()
+        
+        # Update fields
+        self.total_duration = total_duration
+        self.calories_burned = total_calories
+        if latest_health_stat:
+            self.bpm = latest_health_stat.heart_rate
+            self.steps = latest_health_stat.step_count
+            
+        # Save again with updated values
+        super().save(update_fields=['total_duration', 'calories_burned', 'bpm', 'steps'])
 
     def __str__(self):
         return self.name

@@ -14,7 +14,7 @@ import Login from './screens/Auth/Login';
 import Register from './screens/Auth/Register';
 // import Profile from './screens/Profile/Profile';
 import Statistic from './screens/Home/Statistic';
-// import Status from './screens/Home/Status';
+import Status from './screens/Home/Status';
 // import Home from './screens/Home/Home';
 import Reminder from './screens/Reminder/Reminder';
 
@@ -36,9 +36,7 @@ const Tab = createBottomTabNavigator();
 const AppDrawer = () => (
   <Drawer.Navigator screenOptions={{ headerShown: true }}>
     <Drawer.Screen name="Trang chủ" component={HomeTabs} />
-    <Drawer.Screen name="Workout" component={HomeTabs} />
-    <Drawer.Screen name="Reminder" component={Reminder} />
-    <Drawer.Screen name="Nutrition" component={HomeTabs} />
+    <Drawer.Screen name="Nhắc nhở" component={Reminder} />
     <Drawer.Screen name="Lịch tập luyện cá nhân" component={WorkoutStack} />
     <Drawer.Screen name="Bài tập" component={ExerciseStack} />
     <Drawer.Screen name="Nhật ký" component={DiaryStack} />
@@ -88,7 +86,7 @@ const HomeTabs = () => (
     />
     <Tab.Screen
       name="Chỉ số cá nhân"
-      component={ProfileStack} // Thay Profile bằng ProfileStack
+      component={Status} // Thay Profile bằng ProfileStack
       options={{
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="arm-flex" size={size} color={color} />

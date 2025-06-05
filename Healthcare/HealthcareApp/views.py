@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime, date
+from django.utils import timezone
 
 from allauth.headless.base.views import APIView
 from django.contrib.auth import get_user_model
@@ -122,6 +123,7 @@ class HealthStatViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class HieuUserInforViewSet(viewsets.ViewSet):
     queryset = User.objects.filter(is_active=True)
@@ -632,84 +634,106 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
         ]
     )
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        try:
+            target_user, error_response = self.get_target_user(request)
+            if error_response:
+                return error_response
 
-        target_user, error_response = self.get_target_user(request)
-        if error_response:
-            return error_response
+            # Lấy dữ liệu và sắp xếp theo ngày giảm dần
+            queryset = HealthStat.objects.filter(user=target_user).order_by('-date')
 
-        queryset = HealthStat.objects.filter(user=target_user).order_by('-date')
+            # Lấy bản ghi mới nhất cho các giá trị trung bình
+            latest_record = queryset.first()
 
-        # Tính trung bìinhf giá trị
-        user_stats = HealthStat.objects.filter(user=self.request.user).order_by('-date').first()
-
-        user_stats = HealthStat.objects.filter(user=target_user).order_by('-date').first()
-
-        # Nếu có bản ghi
-        if user_stats:
-            avg_water_intake = round(user_stats.water_intake, 2)
-            avg_step_count = int(user_stats.step_count)
-            avg_heart_rate = user_stats.heart_rate
-        else:
+            # Khởi tạo giá trị mặc định
             avg_water_intake = 0
             avg_step_count = 0
             avg_heart_rate = None
 
-        # Serialize the data
-        serializer = self.get_serializer(queryset, many=True)
-        data = serializer.data
+            # Nếu có bản ghi mới nhất, lấy các giá trị từ đó
+            if latest_record:
+                avg_water_intake = round(latest_record.water_intake, 2) if latest_record.water_intake is not None else 0
+                avg_step_count = int(latest_record.step_count) if latest_record.step_count is not None else 0
+                avg_heart_rate = latest_record.heart_rate
 
-        for item in data:
-            item['water_intake'] = avg_water_intake
-            item['step_count'] = avg_step_count
-            item['heart_rate'] = avg_heart_rate
+            # Serialize dữ liệu
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
 
-        return Response(data)
+            # Thêm các giá trị trung bình vào mỗi item
+            for item in data:
+                item['water_intake'] = avg_water_intake
+                item['step_count'] = avg_step_count
+                item['heart_rate'] = avg_heart_rate
 
-        # Thêm thông tin target_user vào response
-        response_data = {
-            'target_user': {
-                'id': target_user.id,
-                'username': target_user.username,
-                'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
-                'role': target_user.role
-            },
-            'results': data
-        }
+            # Tạo response data với thông tin người dùng
+            response_data = {
+                'target_user': {
+                    'id': target_user.id,
+                    'username': target_user.username,
+                    'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
+                    'role': target_user.role
+                },
+                'results': data
+            }
 
-        return Response(response_data)
-
-    def update(self, request, *args, **kwargs):
-        target_user, error_response = self.get_target_user(request)
-        if error_response:
-            return error_response
-
-        # Chỉ cho phép chỉnh sửa dữ liệu của chính mình
-        # Chuyên gia không được chỉnh sửa dữ liệu của khách hàng
-        if target_user != request.user:
+            return Response(response_data)
+        except Exception as e:
+            # Log lỗi để debug
+            print(f"Error in HealthStatisticViewSet.list: {str(e)}")
             return Response(
-                {'error': 'Bạn không có quyền chỉnh sửa dữ liệu của người dùng khác'},
-                status=status.HTTP_403_FORBIDDEN
+                {'error': 'Đã xảy ra lỗi khi xử lý yêu cầu của bạn'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+    def update(self, request, *args, **kwargs):
+        try:
+            target_user, error_response = self.get_target_user(request)
+            if error_response:
+                return error_response
 
-        # Thay vì cập nhật vào bản ghi hiện tại, tạo bản ghi mới
-        new_data = {
-            'user': request.user.id,
-            'water_intake': request.data.get('water_intake', instance.water_intake),
-            'step_count': request.data.get('step_count', instance.step_count),
-            'heart_rate': request.data.get('heart_rate', instance.heart_rate),
-            'weight': request.data.get('weight', instance.weight),
-            'height': request.data.get('height', instance.height),
-        }
+            # Chỉ cho phép chỉnh sửa dữ liệu của chính mình
+            if target_user != request.user:
+                return Response(
+                    {'error': 'Bạn không có quyền chỉnh sửa dữ liệu của người dùng khác'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        serializer = self.get_serializer(data=new_data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+            instance = self.get_object()
 
-        return Response(serializer.data)
+            # Lấy weight và height từ request hoặc instance
+            weight = request.data.get('weight', instance.weight)
+            height = request.data.get('height', instance.height)
+
+            # Tính BMI nếu có cả weight và height
+            bmi = None
+            if weight is not None and height is not None and height > 0:
+                bmi = round(weight / (height * height), 2)
+
+            # Tạo bản ghi mới với dữ liệu cập nhật
+            current_date = timezone.now().date()
+            new_data = {
+                'user': request.user.id,
+                'date': current_date,
+                'water_intake': request.data.get('water_intake', instance.water_intake),
+                'step_count': request.data.get('step_count', instance.step_count),
+                'heart_rate': request.data.get('heart_rate', instance.heart_rate),
+                'weight': weight,
+                'height': height,
+                'bmi': bmi
+            }
+
+            serializer = self.get_serializer(data=new_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Error in HealthStatisticViewSet.update: {str(e)}")
+            return Response(
+                {'error': 'Đã xảy ra lỗi khi cập nhật dữ liệu'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -719,50 +743,53 @@ class HealthStatisticViewSet(viewsets.ModelViewSet):
         """
         Theo dõi sự thay đổi cân nặng, chiều cao theo thời gian (tuần, tháng, năm)
         """
-        target_user, error_response = self.get_target_user(request)
-        if error_response:
-            return error_response
-
-        period = request.query_params.get('period', 'weekly')
-        today = now().date()
-
-        # Xác định khoảng thời gian dựa trên period
         try:
-            period_data = self._get_period_dates(period, request, today)
-        except ValueError as e:
-            return Response({'error': str(e)}, status=400)
+            target_user, error_response = self.get_target_user(request)
+            if error_response:
+                return error_response
 
-        start_date = period_data['start_date']
-        end_date = period_data['end_date']
+            period = request.query_params.get('period', 'weekly')
+            today = timezone.now().date()
 
-        # Lấy dữ liệu và tính toán thay đổi
-        result = self._calculate_changes_from_records(request.user, start_date, end_date)
+            # Xác định khoảng thời gian dựa trên period
+            try:
+                period_data = self._get_period_dates(period, request, today)
+            except ValueError as e:
+                return Response({'error': str(e)}, status=400)
 
+            start_date = period_data['start_date']
+            end_date = period_data['end_date']
 
-        # Lấy dữ liệu và tính toán thay đổi - sử dụng target_user
-        result = self._calculate_changes_from_records(target_user, start_date, end_date)
+            # Lấy dữ liệu và tính toán thay đổi
+            result = self._calculate_changes_from_records(target_user, start_date, end_date)
 
-        # Tạo dữ liệu trả về
-        data = {
-            'target_user': {
-                'id': target_user.id,
-                'username': target_user.username,
-                'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
-                'role': target_user.role
-            },
-            'period': period,
-            'start_date': start_date,
-            'end_date': end_date,
-            'first_record': result['first_record'],
-            'last_record': result['last_record'],
-            'changes': result['changes']
-        }
+            # Tạo dữ liệu trả về
+            data = {
+                'target_user': {
+                    'id': target_user.id,
+                    'username': target_user.username,
+                    'full_name': f"{target_user.first_name} {target_user.last_name}".strip(),
+                    'role': target_user.role
+                },
+                'period': period,
+                'start_date': start_date,
+                'end_date': end_date,
+                'first_record': result['first_record'],
+                'last_record': result['last_record'],
+                'changes': result['changes']
+            }
 
-        # Thêm trường year cho period yearly
-        if period == 'yearly' and 'year' in period_data:
-            data['year'] = period_data['year']
+            # Thêm trường year cho period yearly
+            if period == 'yearly' and 'year' in period_data:
+                data['year'] = period_data['year']
 
-        return Response(data)
+            return Response(data)
+        except Exception as e:
+            print(f"Error in track_changes: {str(e)}")
+            return Response(
+                {'error': 'Đã xảy ra lỗi khi theo dõi thay đổi'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def _get_period_dates(self, period, request, today):
         """

@@ -33,16 +33,18 @@ const UserInfoForm = () => {
                 throw new Error("Access token không tồn tại. Vui lòng đăng nhập lại.");
             }
 
-            const userId = await AsyncStorage.getItem("userId");
+            const userId = await AsyncStorage.getItem("currentUserId");
             if (!userId) {
                 throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
             }
 
             // Dữ liệu gửi lên API User
+            const currentDate = new Date().toISOString().split('T')[0];
             const data = {
                 height: parseFloat(height),
                 weight: parseFloat(weight),
                 health_goals: healthGoals,
+                date: currentDate
             };
             if (age && !isNaN(Number(age))) {
                 data.age = Number(age);
@@ -69,7 +71,8 @@ const UserInfoForm = () => {
                     weight: parseFloat(weight),
                     water_intake: waterIntake ? parseFloat(waterIntake) : 0,
                     step_count: stepCount ? parseInt(stepCount) : 0,
-                    heart_rate: heartRate ? parseInt(heartRate) : null
+                    heart_rate: heartRate ? parseInt(heartRate) : null,
+                    date: currentDate
                 },
                 {
                     headers: {

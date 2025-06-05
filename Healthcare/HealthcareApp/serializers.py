@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
@@ -135,10 +135,12 @@ class UserSerializer(ModelSerializer):
         u.save()
 
         return u
+
+
 class HieuUserInforSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role']
+        fields = ['id', 'username', 'first_name', 'last_name', 'avatar', 'date_of_birth','date_joined', 'role']
 
 class UserInforSerializer(ModelSerializer):
     age = FloatField(required=False)  # Tuổi
@@ -168,15 +170,26 @@ class UserInforSerializer(ModelSerializer):
         # Lưu thông tin người dùng
         instance.save()
         return instance
+
+class DateField(serializers.DateField):
+    def to_representation(self, value):
+        if isinstance(value, datetime):
+            return value.date()
+        return value
+
 class HealthStatSerializer(ModelSerializer):
+    date = DateField()
+
     class Meta:
         model = HealthStat
         fields ='__all__'
 
 class HealthStatisticSerializer(ModelSerializer):
+    date = DateField()
+
     class Meta:
         model = HealthStat
-        fields ='__all__'
+        fields = '__all__'
         extra_kwargs = {
             'bmi': {
                 "read_only": True
