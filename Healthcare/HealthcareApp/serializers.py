@@ -1,7 +1,9 @@
 from datetime import date, datetime
 from django.utils import timezone
 
+
 from django.contrib.auth.password_validation import validate_password
+from rest_framework.fields import DateField, DateTimeField
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer, FloatField, CharField, DateField, DateTimeField
 from HealthcareApp.models import User, WorkoutSession, Exercise, MuscleGroup, Diary, \
@@ -38,13 +40,13 @@ class RegisterSerializer(ModelSerializer):
         try:
             validated_data.pop('password2')
             avatar = validated_data.pop('avatar', None)
-            
+
             user = User.objects.create_user(**validated_data)
-            
+
             if avatar:
                 user.avatar = avatar
                 user.save()
-                
+
             return user
         except Exception as e:
             raise ValidationError({"error": f"Lỗi khi tạo tài khoản: {str(e)}"})
@@ -184,8 +186,9 @@ class UserInforSerializer(ModelSerializer):
         return instance
 
 class HealthStatSerializer(ModelSerializer):
+
     date = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = HealthStat
         fields = ['id', 'date', 'bmi', 'weight', 'height', 'water_intake', 'step_count', 'heart_rate']
@@ -256,6 +259,25 @@ class WorkoutSessionWriteSerializer(serializers.ModelSerializer):
         model = WorkoutSession
         exclude = ['user']
 
+    def create(self, validated_data):
+        exercises = validated_data.pop('exercise', [])
+        instance = super().create(validated_data)
+        instance.exercise.set(exercises)
+        # Tính lại tổng calories và thời gian
+        instance.total_duration = sum(ex.duration for ex in instance.exercise.all())
+        instance.calories_burned = sum(ex.calories_burned for ex in instance.exercise.all())
+        instance.save(update_fields=['total_duration', 'calories_burned'])
+        return instance
+
+    def update(self, instance, validated_data):
+        exercises = validated_data.pop('exercise', None)
+        instance = super().update(instance, validated_data)
+        if exercises is not None:
+            instance.exercise.set(exercises)
+        instance.total_duration = sum(ex.duration for ex in instance.exercise.all())
+        instance.calories_burned = sum(ex.calories_burned for ex in instance.exercise.all())
+        instance.save(update_fields=['total_duration', 'calories_burned'])
+        return instance
 
 class DiarySerializer(ModelSerializer):
     class Meta:
@@ -299,9 +321,10 @@ class ExpertCoachSerializer(ModelSerializer):
     """Serializer cho danh sách chuyên gia và huấn luyện viên"""
     full_name = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
+
     date_of_birth = serializers.SerializerMethodField()
     date_joined = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name',

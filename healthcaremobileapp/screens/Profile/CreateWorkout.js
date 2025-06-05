@@ -57,14 +57,16 @@ const CreateWorkout = ({ navigation }) => {
       const token = await AsyncStorage.getItem("token");
       if (!token) throw new Error("Chưa đăng nhập. Vui lòng đăng nhập lại.");
 
-      // Tính tổng thời lượng từ các bài tập đã chọn (nếu có trường duration)
+      // Tính tổng thời lượng và tổng calories từ các bài tập đã chọn
       const totalDuration = selectedExercises.reduce((sum, ex) => sum + (ex.duration || 0), 0);
+      const totalCalories = selectedExercises.reduce((sum, ex) => sum + (ex.calories_burned || 0), 0);
 
       const data = {
         name: workoutName,
-        schedule: date.toISOString().slice(0, 10),
+        schedule: date.toISOString(),
         exercise: selectedExercises.map((ex) => ex.id),
-        total_duration: totalDuration, // BẮT BUỘC PHẢI CÓ
+        total_duration: totalDuration,
+        calories_burned: totalCalories,
       };
 
       // Xóa các trường rỗng/null
