@@ -37,13 +37,13 @@ class RegisterSerializer(ModelSerializer):
         try:
             validated_data.pop('password2')
             avatar = validated_data.pop('avatar', None)
-
+            
             user = User.objects.create_user(**validated_data)
-
+            
             if avatar:
                 user.avatar = avatar
                 user.save()
-
+                
             return user
         except Exception as e:
             raise ValidationError({"error": f"Lỗi khi tạo tài khoản: {str(e)}"})
@@ -135,6 +135,11 @@ class UserSerializer(ModelSerializer):
         u.save()
 
         return u
+class HieuUserInforSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id','username','first_name','last_name','avatar','date_of_birth','date_joined', 'role']
+
 class UserInforSerializer(ModelSerializer):
     age = FloatField(required=False)  # Tuổi
     height = FloatField(required=False)  # Chiều cao (m)
@@ -167,6 +172,16 @@ class HealthStatSerializer(ModelSerializer):
     class Meta:
         model = HealthStat
         fields ='__all__'
+
+class HealthStatisticSerializer(ModelSerializer):
+    class Meta:
+        model = HealthStat
+        fields ='__all__'
+        extra_kwargs = {
+            'bmi': {
+                "read_only": True
+            }
+        }
 
 class MuscleGroupSerializer(ModelSerializer):
     class Meta:
@@ -242,7 +257,7 @@ class ExpertCoachSerializer(ModelSerializer):
     """Serializer cho danh sách chuyên gia và huấn luyện viên"""
     full_name = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name',
