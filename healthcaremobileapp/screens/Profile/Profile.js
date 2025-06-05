@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Button } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -7,13 +7,13 @@ import Apis, { endpoints } from "../../configs/Apis";
 import MyStyles from "../../styles/MyStyles";
 import { useFocusEffect } from "@react-navigation/native";
 
-
+import { MyDispatchContext, MyUserContext } from "../../configs/Contexts";
 
 const Profile = () => {
     const navigation = useNavigation();
     const [firstname, setFirstname] = useState("");
     const [loading, setLoading] = useState(false);
-
+    const dispatch = useContext(MyDispatchContext);
     // Thêm state cho chỉ số sức khỏe
     const [latestHealth, setLatestHealth] = useState(null);
     const [loadingHealth, setLoadingHealth] = useState(true);
@@ -22,6 +22,7 @@ const Profile = () => {
     const fetchUserInfo = async () => {
         try {
             setLoading(true);
+            console.log("async storage", AsyncStorage);
             const token = await AsyncStorage.getItem("token");
             if (!token) throw new Error("Access token không tồn tại. Vui lòng đăng nhập lại.");
             let userResponse = await Apis.get(endpoints["current-user"], {
@@ -65,14 +66,11 @@ const Profile = () => {
             fetchHealthStat();
         }, [])
     );
-    const logout = async () => {
-        try {
-            await AsyncStorage.removeItem("token");
-            navigation.navigate("Login");
-        } catch (error) {
-            Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.");
-        }
-    };
+    const logout = () => {
+        dispatch({
+            "type": "logout"
+        });
+    }
 
     return (
         <View style={styles.container}>

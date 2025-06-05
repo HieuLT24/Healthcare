@@ -33,7 +33,7 @@ const UserInfoForm = () => {
                 throw new Error("Access token không tồn tại. Vui lòng đăng nhập lại.");
             }
 
-            const userId = await AsyncStorage.getItem("userId");
+            const userId = await AsyncStorage.getItem("currentUserId");
             if (!userId) {
                 throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
             }
