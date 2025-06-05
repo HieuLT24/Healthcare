@@ -254,5 +254,5 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,  # Tắt/bật đăng nhập bằng username/password
 }
 
-client_id_Hieu='XACNF8vlciv5XLCHD5mgR4fkOjl5FD9AR4axIeS3'
+client_id_Hieu='mOINziVcYXX1vl4g9EO2XZzgMnC0hkTsVJUBkMn1'
 client_secret_Hieu = 'IDgWxpeSwUo8wwZFZIQZx5z1wyphov496QCTvhWThaPaTGgK51FaC2JqcdDtUwCejlvuar4QUB77vlSlHP1dV5jSK4YOamS882lVRwHxwMtk9FIJK68JTvYZXtyPNwWt'

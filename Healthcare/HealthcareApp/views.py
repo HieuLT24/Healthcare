@@ -109,7 +109,7 @@ class UserInforViewSet(viewsets.ViewSet, generics.UpdateAPIView):
         serializer.save()
         return Response(serializer.data)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs): #Cho phép cập nhật từng trường riêng lẻ (PATCH).
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
