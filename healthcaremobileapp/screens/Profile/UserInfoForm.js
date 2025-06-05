@@ -44,7 +44,7 @@ const UserInfoForm = () => {
                 height: parseFloat(height),
                 weight: parseFloat(weight),
                 health_goals: healthGoals,
-                date: currentDate
+                date: currentDate,
             };
             if (age && !isNaN(Number(age))) {
                 data.age = Number(age);
@@ -72,7 +72,7 @@ const UserInfoForm = () => {
                     water_intake: waterIntake ? parseFloat(waterIntake) : 0,
                     step_count: stepCount ? parseInt(stepCount) : 0,
                     heart_rate: heartRate ? parseInt(heartRate) : null,
-                    date: currentDate
+                    date: currentDate,
                 },
                 {
                     headers: {
