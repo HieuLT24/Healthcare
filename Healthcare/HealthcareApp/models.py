@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from ckeditor.fields import RichTextField
 from cloudinary.models import CloudinaryField
 from enum import Enum
+from datetime import datetime
 
 
 # Create your models here.
@@ -40,6 +41,10 @@ class User(AbstractUser):
     weight = models.FloatField(null=True, blank=True)  # Cân nặng cơ bản (kg)
     health_goals = models.CharField(max_length=50, choices=[(goal.name, goal.value) for goal in HealthGoals], default=HealthGoals.MAINTAIN_HEALTH.value)
 
+    def save(self, *args, **kwargs):
+        if self.date_joined and not isinstance(self.date_joined, datetime):
+            self.date_joined = datetime.combine(self.date_joined, datetime.min.time())
+        super().save(*args, **kwargs)
 
 class HealthStat(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_stats')
