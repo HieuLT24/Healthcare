@@ -44,7 +44,9 @@ const WorkoutDetail = ({ route }) => {
   const totalCalories = Array.isArray(workout.exercise)
     ? workout.exercise.reduce((sum, ex) => sum + (ex.calories_burned || 0), 0)
     : 0;
-
+  const totalDuration = Array.isArray(workout.exercise)
+  ? workout.exercise.reduce((sum, ex) => sum + (ex.duration || 0), 0)
+  : 0;
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#f6f6f6" }}>
       <View style={styles.card}>
@@ -61,7 +63,7 @@ const WorkoutDetail = ({ route }) => {
           <Text style={styles.info}>
             🔥 Tổng calories tiêu thụ: {totalCalories} kcal
           </Text>
-          <Text style={styles.info}>⏳ {workout.total_duration} phút</Text>
+          <Text style={styles.info}>⏳ {totalDuration} phút</Text>
         </View>
       </View>
 

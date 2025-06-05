@@ -181,7 +181,6 @@ class DateField(serializers.DateField):
 
 class HealthStatSerializer(ModelSerializer):
     date = DateField()
-
     class Meta:
         model = HealthStat
         fields ='__all__'
@@ -236,6 +235,25 @@ class WorkoutSessionWriteSerializer(serializers.ModelSerializer):
         model = WorkoutSession
         exclude = ['user']
 
+    def create(self, validated_data):
+        exercises = validated_data.pop('exercise', [])
+        instance = super().create(validated_data)
+        instance.exercise.set(exercises)
+        # Tính lại tổng calories và thời gian
+        instance.total_duration = sum(ex.duration for ex in instance.exercise.all())
+        instance.calories_burned = sum(ex.calories_burned for ex in instance.exercise.all())
+        instance.save(update_fields=['total_duration', 'calories_burned'])
+        return instance
+
+    def update(self, instance, validated_data):
+        exercises = validated_data.pop('exercise', None)
+        instance = super().update(instance, validated_data)
+        if exercises is not None:
+            instance.exercise.set(exercises)
+        instance.total_duration = sum(ex.duration for ex in instance.exercise.all())
+        instance.calories_burned = sum(ex.calories_burned for ex in instance.exercise.all())
+        instance.save(update_fields=['total_duration', 'calories_burned'])
+        return instance
 
 class DiarySerializer(ModelSerializer):
     class Meta:
